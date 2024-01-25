@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "project"
+version = "0.1.0"
+description = "Final Project for the Simulation and Performance Evaluation course"
+license = "MIT"
+authors = ["Manuela Corte Pause <manuela.cortepause@studenti.unitn.it>",
+"Simone Marrocco <simone.marrocco@studenti.unitn.it>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+statsmodels = "^0.14.1"
+seaborn = {extras = ["stats"], version = "^0.13.1"}
+mypy = "^1.8.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.12.1"
+pre-commit = "^3.6.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
