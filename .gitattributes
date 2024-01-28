@@ -1,0 +1,5 @@
+data/*.csv filter=lfs diff=lfs merge=lfs -text
+data/raw/IFS_09-26-2023[[:space:]]00-50-38-77_timeSeries.csv filter=lfs diff=lfs merge=lfs -text
+data/raw/Inflation[[:space:]]data[[:space:]]-[[:space:]]hcpi_a.csv filter=lfs diff=lfs merge=lfs -text
+data/raw/Inflation[[:space:]]data[[:space:]]-[[:space:]]hcpi_m.csv filter=lfs diff=lfs merge=lfs -text
+data/raw/Inflation[[:space:]]data[[:space:]]-[[:space:]]hcpi_q.csv filter=lfs diff=lfs merge=lfs -text
