@@ -2,11 +2,12 @@ import os
 from typing import LiteralString
 
 import pandas as pd
-from pandas import DataFrame, Index
+from pandas import DataFrame
 from pandas.io.parsers import TextFileReader
 
 from src.structs import Country, Indicator, TimePeriod
-from src.utils import get_indicators_columns, get_time_periods_colums
+
+from ._dataframe import get_indicators_columns, get_time_periods_colums
 
 
 def clean_gdp_dataset(
@@ -92,12 +93,13 @@ def clean_inflation_dataset(
                 "data/raw/Inflation data - hcpi_m.csv",
                 dtype=str,
             )
-        case _:
-            raise ValueError("Invalid time period")
 
     # Rename column to match the other datasets
     df.drop(columns=["Country Code", "Indicator Type"], inplace=True)
-    df.rename(columns={"IMF Country Code": "Country Code"}, inplace=True)
+    df.rename(
+        columns={"IMF Country Code": "Country Code", "Series Name": "Indicator Name"},
+        inplace=True,
+    )
     _rename_time_period_columns(df, time_granularity)
 
     country_path: LiteralString = output_file_path + f"/{country.name.lower()}"
@@ -142,10 +144,8 @@ def remove_empty_columns(
     """
     if isinstance(input, str):
         df: DataFrame = pd.read_csv(input, dtype=str)
-    elif isinstance(input, DataFrame):
-        df = input
     else:
-        raise TypeError("Invalid input type")
+        df = input
 
     # Remove all columns that have only NaN values
     df = df.dropna(axis=1, how="all")
@@ -197,7 +197,7 @@ def _remove_unused_indicators(reader: TextFileReader) -> DataFrame:
         # Filter all lines not containing the following indicators
         chunk = chunk[
             chunk["Indicator Name"].str.contains(Indicator.GDP.value)
-            | chunk["Indicator Name"].str.contains(Indicator.CPI.value)
+            | chunk["Indicator Name"].str.contains(Indicator.CPIDX.value)
             | chunk["Indicator Name"].str.contains(Indicator.IR.value)
         ]
 
@@ -224,7 +224,7 @@ def _filter_dataframe_by_country(dataframe: DataFrame, country: Country) -> Data
     if country.name == Country.G20.name:
         return dataframe[dataframe["Country Code"].isin(Country.get_all_codes())]
 
-    filtered_df: DataFrame = dataframe[dataframe["Country Code"] == country.value]
+    filtered_df: DataFrame = dataframe[dataframe["Country Code"] == str(country.value)]
     return filtered_df
 
 
@@ -251,11 +251,9 @@ def _get_different_time_granularities(
                 year, month = column[:4], column[4:]
                 if year.isnumeric() and month.startswith("M"):
                     time_periods_columns.append(column)
-        case _:
-            raise ValueError("Invalid time period")
 
     # Create a new dataframe with the columns corresponding to the given time period
-    columns_to_remove: Index[str] = dataframe.columns.difference(
+    columns_to_remove = dataframe.columns.difference(
         indicators_columns + time_periods_columns
     )
     dataframe.drop(columns=columns_to_remove, inplace=True)
@@ -288,10 +286,7 @@ def _rename_time_period_columns(
                 if year.isnumeric() and month.isnumeric():
                     old_columns_names.append(column)
                     new_columns_names.append(f"{year}M{int(month)}")
-        case _:
-            raise ValueError("Invalid time period")
-    print(old_columns_names)
-    print(new_columns_names)
+
     dataframe.rename(
         columns=dict(zip(old_columns_names, new_columns_names)), inplace=True
     )

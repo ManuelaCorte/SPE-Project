@@ -1,7 +1,7 @@
-from ._dataframe import (
-    convert_to_matrix,
-    get_indicators_columns,
-    get_time_periods_colums,
-)
+from ._types import Float, Int, Matrix
 
-__all__ = ["get_indicators_columns", "get_time_periods_colums", "convert_to_matrix"]
+__all__ = [
+    "Matrix",
+    "Int",
+    "Float",
+]

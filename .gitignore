@@ -166,4 +166,6 @@ cython_debug/
 .vscode/
 
 # Raw dataset
-dataset/raw/*.csv
+*.csv
+data/
+!data/raw/*.csv
