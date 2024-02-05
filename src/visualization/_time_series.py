@@ -3,25 +3,24 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
+import seaborn as sbn
 import statsmodels.graphics.tsaplots as tsa
 
-from src.utils import Matrix
+from src.structs import PlotOptions
+from src.utils import Matrix, remove_nans
 
 
 def plot_time_series(
     x: Matrix[Literal["N"], np.str_],
     y: Matrix[Literal["N"], np.float32],
-    title: str,
     window: int,
-    save: bool = False,
+    args: PlotOptions,
 ) -> None:
     if window % 2 == 0:
         raise ValueError("Window must be odd")
 
-    nan_mask = np.isnan(y)
-    x = x[~nan_mask]
-    y = y[~nan_mask]
+    x = remove_nans(x)
+    y = remove_nans(y)
 
     weights = np.repeat(1.0 / window, window)
     moving_average: Matrix[Literal["N"], np.float32] = np.convolve(y, weights, "valid")
@@ -35,55 +34,81 @@ def plot_time_series(
         constant_values=np.NaN,
     )
 
-    sns.set_theme(style="darkgrid")
-    sns.lineplot(x=x, y=y, label="Original")
-    sns.lineplot(x=x, y=moving_average, label="Moving Average")
-    plt.title(title)
-    plt.xlabel("Time")
-    plt.ylabel("Value")
+    sbn.set_theme(style="darkgrid")
+    sbn.lineplot(x=x, y=y, label=args.labels[0])
+    sbn.lineplot(x=x, y=moving_average, label=args.labels[1])
+    plt.title(args.title)
+    plt.xlabel(args.x_axis)
+    plt.ylabel(args.y_axis)
     plt.legend()
-    plt.show()
 
-    if save:
+    if args.save:
         if not os.path.exists("data/results/plots"):
             os.makedirs("data/results/plots")
-        plt.savefig(f"plots/{title}.png")
+        plt.savefig(f"plots/{args.filename}.png")
 
 
-def autocorrelation_plots(
+def acf_plot(
     x: Matrix[Literal["N"], np.str_],
     y: Matrix[Literal["N"], np.float32],
     lag: int,
-    title: str,
-    save: bool = False,
+    args: PlotOptions,
 ) -> None:
-    nan_mask = np.isnan(y)
-    x = x[~nan_mask]
-    y = y[~nan_mask]
+    x = remove_nans(x)
+    y = remove_nans(y)
 
-    acf_figure, ax = plt.subplots(1, 2, figsize=(20, 10))
+    acf_figure, ax = plt.subplots(1, 1, figsize=(20, 10))
+    tsa.plot_acf(y, lags=lag, title=args.title, ax=ax)
+    ax.set_xlabel(args.x_axis)
+    ax.set_ylabel(args.y_axis)
 
-    tsa.plot_acf(y, lags=lag, title=title, ax=ax[0])
-    tsa.plot_pacf(y, lags=lag, title=title, ax=ax[1])
+    if args.save:
+        if not os.path.exists("data/results/plots"):
+            os.makedirs("data/results/plots")
+        acf_figure.savefig(f"data/results/plots/{args.filename}.png")
 
-    ax[0].set_xlabel("Lag")
-    ax[0].set_ylabel("Autocorrelation")
-    ax[1].set_xlabel("Lag")
-    ax[1].set_ylabel("Partial Autocorrelation")
 
-    # Lag plot
+def pacf_plot(
+    x: Matrix[Literal["N"], np.str_],
+    y: Matrix[Literal["N"], np.float32],
+    lag: int,
+    args: PlotOptions,
+) -> None:
+    x = remove_nans(x)
+    y = remove_nans(y)
+
+    pacf_figure, ax = plt.subplots(1, 1, figsize=(20, 10))
+    tsa.plot_pacf(y, lags=lag, title=args.title, ax=ax)
+    ax.set_xlabel(args.x_axis)
+    ax.set_ylabel(args.y_axis)
+
+    if args.save:
+        if not os.path.exists("data/results/plots"):
+            os.makedirs("data/results/plots")
+        pacf_figure.savefig(f"data/results/plots/{args.filename}.png")
+
+
+def lag_plot(
+    x: Matrix[Literal["N"], np.float32],
+    lag: int,
+    args: PlotOptions,
+) -> None:
+    x = remove_nans(x)
+
     nrows = lag // 5
     lag_figure, ax = plt.subplots(nrows, 5, figsize=(20, nrows * 10))
     for i in range(lag):
-        Y_lag = np.roll(y, i + 1)
-        ax[i // 5, i % 5].scatter(y, Y_lag)
+        x_lag = x[i:]
+        ax[i // 5, i % 5].scatter(x[: len(x) - i], x_lag)
         ax[i // 5, i % 5].set_title(f"Lag {i + 1}")
+        ax[i // 5, i % 5].set_xlabel(args.x_axis)
+        ax[i // 5, i % 5].set_ylabel(args.y_axis)
 
-    plt.show()
+    lag_figure.suptitle(args.title)
+    lag_figure.tight_layout()
 
-    if save:
+    if args.save:
         if not os.path.exists("data/results/plots"):
             os.makedirs("data/results/plots")
 
-        acf_figure.savefig(f"data/results/plots/{title}.png")
-        lag_figure.savefig(f"data/results/plots/{title}_lag.png")
+        lag_figure.savefig(f"data/results/plots/{args.filename}.png")

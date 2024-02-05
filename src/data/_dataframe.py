@@ -1,9 +1,10 @@
 from typing import Any, Literal
+
 import numpy as np
 import pandas as pd
-from src.structs import Indicator
 
-from src.utils import Matrix, Float
+from src.structs import Indicator
+from src.utils import Float, Matrix
 
 
 def get_indicators_columns(columns: Any | list[str]) -> list[str]:
