@@ -72,11 +72,12 @@ def autocorrelation_plots(
     ax[1].set_ylabel("Partial Autocorrelation")
 
     # Lag plot
-    nrows = lag // 5 + 1
+    nrows = lag // 5
     lag_figure, ax = plt.subplots(nrows, 5, figsize=(20, nrows * 10))
     for i in range(lag):
-        Y_lag = np.pad(y[i:], (0, i), mode="constant", constant_values=np.NaN)
+        Y_lag = np.roll(y, i + 1)
         ax[i // 5, i % 5].scatter(y, Y_lag)
+        ax[i // 5, i % 5].set_title(f"Lag {i + 1}")
 
     plt.show()
 

@@ -167,5 +167,5 @@ cython_debug/
 
 # Raw dataset
 *.csv
-data/
+/data/
 !data/raw/*.csv
