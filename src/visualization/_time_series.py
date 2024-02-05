@@ -7,19 +7,18 @@ import seaborn as sbn
 import statsmodels.graphics.tsaplots as tsa
 
 from src.structs import PlotOptions
-from src.utils import Matrix, remove_nans
+from src.utils import Float, Matrix, remove_nans
 
 
 def plot_time_series(
     x: Matrix[Literal["N"], np.str_],
-    y: Matrix[Literal["N"], np.float32],
+    y: Matrix[Literal["N"], Float],
     window: int,
     args: PlotOptions,
 ) -> None:
     if window % 2 == 0:
         raise ValueError("Window must be odd")
 
-    x = remove_nans(x)
     y = remove_nans(y)
 
     weights = np.repeat(1.0 / window, window)
@@ -50,11 +49,10 @@ def plot_time_series(
 
 def acf_plot(
     x: Matrix[Literal["N"], np.str_],
-    y: Matrix[Literal["N"], np.float32],
+    y: Matrix[Literal["N"], Float],
     lag: int,
     args: PlotOptions,
 ) -> None:
-    x = remove_nans(x)
     y = remove_nans(y)
 
     acf_figure, ax = plt.subplots(1, 1, figsize=(20, 10))
@@ -74,7 +72,6 @@ def pacf_plot(
     lag: int,
     args: PlotOptions,
 ) -> None:
-    x = remove_nans(x)
     y = remove_nans(y)
 
     pacf_figure, ax = plt.subplots(1, 1, figsize=(20, 10))
@@ -89,7 +86,7 @@ def pacf_plot(
 
 
 def lag_plot(
-    x: Matrix[Literal["N"], np.float32],
+    x: Matrix[Literal["N"], Float],
     lag: int,
     args: PlotOptions,
 ) -> None:

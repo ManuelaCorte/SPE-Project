@@ -1,11 +1,13 @@
 # Dynamic time warping implementation
 
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sbn
 from typing import Literal
-from src.utils import Matrix, Float, remove_nans
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sbn
+
 from src.structs import PlotOptions
+from src.utils import Float, Matrix, remove_nans
 
 
 class DynamicTimeWarping:
