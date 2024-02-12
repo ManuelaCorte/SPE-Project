@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Literal
 
 import numpy as np
@@ -35,13 +36,13 @@ def get_time_periods_colums(columns: Any | list[str]) -> list[str]:
 
 def convert_to_matrix(
     df: pd.DataFrame, indicator: Indicator
-) -> Matrix[Literal["N M"], Float]:
+) -> Matrix[Literal["M N"], Float]:
     # Get row corresponding to the given indicator
     dataframe = df[df["Indicator Name"].str.contains(indicator.value)]
     # Get only the rows corresponding to the time periods
     colums: list[str] = get_time_periods_colums(dataframe.columns)
     dataframe = dataframe[colums]
 
-    dataframe = dataframe.dropna(axis=0, how="all")
-
+    if len(dataframe > 1):
+        warnings.warn(f"Multiple rows refer to indicator {indicator.value}")
     return dataframe.to_numpy(dtype=np.float32)

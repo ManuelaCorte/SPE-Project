@@ -127,7 +127,7 @@ def clean_inflation_dataset(
 def remove_empty_columns(
     input: str | DataFrame,
     output: str,
-) -> tuple[DataFrame, str, str]:
+) -> DataFrame:
     """
     Remove all columns that have only NaN values.
 
@@ -147,31 +147,17 @@ def remove_empty_columns(
     else:
         df = input
 
-    # Remove all columns that have only NaN values
-    df = df.dropna(axis=1, how="all")
+    # Remove all rows that have only NaN values
+    df = df.dropna(axis=0, how="all")
 
-    # Add all colums that don't represent a time period
-    indicators_columns: list[str] = get_indicators_columns(df.columns)
-
-    # Remove all row that have only NaN values outside of the indicators
+    # Remove all columns that have any NaN value
     df = df.dropna(
-        axis=0,
-        how="all",
-        subset=df.columns.difference(indicators_columns),
+        axis=1,
+        how="any",
     )
     df.to_csv(output, index=False)
 
-    # Find first time period for which at least one indicator has a value
-    first_time_period: str = get_time_periods_colums(df.columns)[0]
-
-    # Find first time period for which all indicators have a value
-    first_time_period_complete: str = ""
-    for column in get_time_periods_colums(df.columns):
-        if df[column].isna().sum() == 0:
-            first_time_period_complete = column
-            break
-
-    return df, first_time_period, first_time_period_complete
+    return df
 
 
 ###################################################################################################

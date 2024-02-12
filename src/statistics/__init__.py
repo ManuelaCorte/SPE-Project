@@ -1,4 +1,5 @@
-from ._stationarity import (
+from ._tests import correlation, stationarity
+from ._transformations import (
     differencing,
     remove_differencing,
     remove_seasonal_differencing,
@@ -10,4 +11,6 @@ __all__ = [
     "remove_differencing",
     "seasonal_differencing",
     "remove_seasonal_differencing",
+    "correlation",
+    "stationarity",
 ]

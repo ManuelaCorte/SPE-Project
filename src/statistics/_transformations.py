@@ -1,5 +1,7 @@
 from typing import Literal
 
+import numpy as np
+
 from src.utils import Float, Matrix
 
 
@@ -105,3 +107,45 @@ def remove_differencing(
         return ts
 
     return remove_differencing(ts[1:] + ts[:-1], d - 1)
+
+
+def power_transform(
+    ts: Matrix[Literal["N"], Float], power: int
+) -> Matrix[Literal["N"], Float]:
+    """
+    Apply a power transformation to a time series. For λ = 1 there is no transformation and common values of λ are 0.5 (square
+    root transformation) -0.5 (reciprocal square root transformation), -1 (inverse
+    transformation) and 0 (logarithmic transformation).
+
+    Params:
+        s: time series
+        power: power parameter
+
+    Returns:
+        transformed time series
+    """
+    mean = np.exp(np.mean(np.log(ts)))
+    if power == 0:
+        return mean * np.log(ts)
+
+    return (ts**power - 1) / (power * mean ** (power - 1))
+
+
+def inverse_power_transform(
+    ts: Matrix[Literal["N"], Float], power: int
+) -> Matrix[Literal["N"], Float]:
+    """
+    Apply the inverse of a power transformation to a time series.
+
+    Params:
+        s: time series
+        power: power parameter
+
+    Returns:
+        transformed time series
+    """
+    mean = np.log(np.mean(np.log(ts)))
+    if power == 0:
+        return np.exp(ts / mean)
+
+    return (ts * power * mean ** (power - 1) + 1) ** (1 / power)

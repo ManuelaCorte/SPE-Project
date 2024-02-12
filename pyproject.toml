@@ -30,6 +30,8 @@ typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
+reportUnusedImport = false
+reportUnusedVariable = false
 
 pythonVersion = "3.12"
 pythonPlatform = "Linux"

@@ -1,4 +1,12 @@
 from ._constants import Country, Indicator, TimePeriod
 from ._plots import PlotOptions
+from ._tests import SignificanceResult, StationarityTest
 
-__all__ = ["Country", "Indicator", "TimePeriod", "PlotOptions"]
+__all__ = [
+    "Country",
+    "Indicator",
+    "TimePeriod",
+    "PlotOptions",
+    "SignificanceResult",
+    "StationarityTest",
+]
