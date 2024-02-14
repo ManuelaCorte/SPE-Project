@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +18,24 @@ def correlation(
     """
     Computes the correlation between two time series. The correlations computed
     are the Pearson, Kendall and Spearman correlation coefficients.
+
+    The Pearson correlation coefficient measures the degree of relationship between
+    linearly related variables.
+
+    Kendall rank correlation is a non-parametric test that measures the strength of
+    dependence between two variables.
+
+    The Spearman rank correlation is a non-parametric test that degree of
+    association between two variables. It doesn't carry any assumption but needs
+    larger sample size to produce accurate results.
+
+    Parameters:
+        variables: The time series to compute the correlation for.
+        plot_args: If presents, the correlations matrix are plotted using these
+        parameters.
+
+    Returns:
+        The correlation matrix for the three correlation coefficients.s
     """
     s = variables[0].shape
     for var in variables:
@@ -34,13 +52,13 @@ def correlation(
     spearman: Matrix[Literal["N N"], Float] = np.zeros((m, m))
     for i in range(m):
         for j in range(i + 1, m):
-            kendall_result: SignificanceResult = stats.kendalltau(
+            kendall_result: Any = stats.kendalltau(
                 variables[i], variables[j], nan_policy="raise"
             )
             kendall[i, j] = kendall_result.statistic
             kendall[j, i] = kendall_result.statistic
 
-            spearman_test: SignificanceResult = stats.spearmanr(
+            spearman_test: Any = stats.spearmanr(
                 variables[i], variables[j], nan_policy="raise", axis=1
             )  # type: ignore
             spearman[i, j] = spearman_test.statistic
@@ -60,12 +78,22 @@ def stationarity(
 ) -> tuple[StationarityTest, StationarityTest]:
     stat, pvalue, lags, _, critvalues, *_ = adfuller(x, maxlag=max_lag)  # type: ignore
     adf_test: StationarityTest = StationarityTest(
-        "Augmented Dickey-Fuller", stat, pvalue, lags, critvalues
+        "Augmented Dickey-Fuller",
+        "there is a unit root (one of the roots of the characterstic polynomial is 1) --> the series isn't stationary",
+        stat,
+        pvalue,
+        lags,
+        critvalues,
     )
 
     stat, pvalue, lag, critvalues = kpss(x)  # type: ignore
     kpss_test: StationarityTest = StationarityTest(
-        "Kwiatkowski-Phillips-Schmidt-Shin", stat, pvalue, lag, critvalues
+        "Kwiatkowski-Phillips-Schmidt-Shin",
+        "The observed time series is stationary around a determinisitc trend",
+        stat,
+        pvalue,
+        lag,
+        critvalues,
     )
 
     return adf_test, kpss_test

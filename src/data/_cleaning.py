@@ -1,5 +1,5 @@
 import os
-from typing import LiteralString
+from typing import LiteralString, Optional
 
 import pandas as pd
 from pandas import DataFrame
@@ -16,6 +16,20 @@ def clean_gdp_dataset(
     save_intermediate: bool = False,
     force: bool = False,
 ) -> DataFrame:
+    """
+    Read the raw dataset and clean it by removing unused indicators and filtering by country and by specific
+    time rate (i.e. year, quarter, month).
+
+    Parameters:
+        country: The country to filter by. If the country is None, only the
+            rows corresponding to all g20 countries will be returned.
+        time_granularity: The time granularity to filter by.
+        save_intermediate: If True, the intermediate dataframes will be saved to csv files.
+        force: If True, the function will not check if the output file already exists.
+
+    Returns:
+        The dataframe containing the cleaned data.
+    """
     chunksize: int = 10**4
     output_file_path = "data/cleaned"
     if not os.path.exists(output_file_path):
@@ -73,6 +87,19 @@ def clean_inflation_dataset(
     save_intermediate: bool = False,
     force: bool = False,
 ) -> DataFrame:
+    """
+    Read the raw dataset and clean it by removing unused indicators and filtering by country and by specific
+    time rate (i.e. year, quarter, month).
+
+    Parameters:
+        country: The country to filter by. If the country is None, only the
+            rows corresponding to all g20 countries will be returned.
+        time_granularity: The time granularity to filter by.
+        save_intermediate: If True, the intermediate dataframes will be saved to csv files.
+        force: If True, the function will not check if the output file already exists.
+
+    Returns:
+        The dataframe containing the cleaned data."""
     output_file_path = "data/cleaned"
     if not os.path.exists(output_file_path):
         os.makedirs(output_file_path)
@@ -124,22 +151,20 @@ def clean_inflation_dataset(
     return df
 
 
-def remove_empty_columns(
+def remove_empty_values(
     input: str | DataFrame,
-    output: str,
+    output: Optional[str] = None,
 ) -> DataFrame:
     """
-    Remove all columns that have only NaN values.
+    Remove all rows and columns that have only NaN values.
 
-    Args:
+    Parameters:
         input_file: The path to the csv file containing the dataset.
-        output_file: The path to the csv file where the dataset without empty columns
-            will be saved.
+        output_file: If specified, the path to the csv file where the dataset without nan values.
         force: If True, the function will not check if the output file already exists.
 
     Returns:
-        A tuple containing the dataframe, the first time period for which at least one indicator has a value
-        that isn't NaN and the first time period for which all indicators have a value different from NaN.
+        The dataframe containing the cleaned data.
 
     """
     if isinstance(input, str):
@@ -155,7 +180,9 @@ def remove_empty_columns(
         axis=1,
         how="any",
     )
-    df.to_csv(output, index=False)
+
+    if output is not None:
+        df.to_csv(output, index=False)
 
     return df
 
@@ -169,7 +196,7 @@ def _remove_unused_indicators(reader: TextFileReader) -> DataFrame:
     """
     Remove all indicators that are not in the list of indicators we are interested in.
 
-    Args:
+    Parameters:
         reader: The reader to read the csv file.
 
     Returns:
@@ -199,7 +226,7 @@ def _filter_dataframe_by_country(dataframe: DataFrame, country: Country) -> Data
     """
     Filter the given dataframe by the given country.
 
-    Args:
+    Parameters:
         dataframe: The dataframe to filter.
         country: The country to filter by. If the country is None, only the
             rows corresponding to all g20 countries will be returned.
@@ -218,6 +245,16 @@ def _get_different_time_granularities(
     dataframe: DataFrame,
     time_period: TimePeriod,
 ) -> DataFrame:
+    """
+    Removes the columns not corresponding to the given time period.
+
+    Parameters:
+        dataframe: The dataframe to filter.
+        time_period: The time period to filter by (year/quarter/month).
+
+    Returns:
+        The dataframe containing only the columns corresponding to the given time period.
+    """
     columns: list[str] = get_time_periods_colums(dataframe.columns)
 
     indicators_columns = get_indicators_columns(dataframe.columns)
@@ -250,6 +287,16 @@ def _get_different_time_granularities(
 def _rename_time_period_columns(
     dataframe: DataFrame, time_period: TimePeriod
 ) -> DataFrame:
+    """
+    Rename to time periods columns to match the other datasets.
+
+    Parameters:
+        dataframe: The dataframe to filter.
+        time_period: The time period to filter by (year/quarter/month).
+
+    Returns:
+        The dataframe containing only the columns corresponding to the given time period.
+    """
     columns: list[str] = get_time_periods_colums(dataframe.columns)
     old_columns_names: list[str] = []
     new_columns_names: list[str] = []

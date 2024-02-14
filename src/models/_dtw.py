@@ -11,9 +11,20 @@ from src.utils import Float, Matrix, remove_nans
 
 
 class DynamicTimeWarping:
+    """
+    Dynamic Time Warping (DTW) implementation. DTW computes the distance between two
+    time series by aligning them in a way that minimizes the distance between them,
+    basically giving the optimal match between the two series.
+    """
+
     def __init__(
         self, t: Matrix[Literal["N"], Float], s: Matrix[Literal["M"], Float]
     ) -> None:
+        """
+        Args:
+            t: The first time series
+            s: The second time series
+        """
         if t.ndim != 1 or s.ndim != 1:
             raise ValueError("Both time series must be 1D")
 
@@ -23,6 +34,9 @@ class DynamicTimeWarping:
 
     @property
     def cost_matrix(self) -> Matrix[Literal["N M"], Float]:
+        """
+        The cost matrix computed by the DTW algorithm. The cost matrix is a 2D array
+        that contains the cost of aligning each element of the two time series."""
         if not hasattr(self, "_cost_matrix"):
             raise AttributeError(
                 "Cost matrix has not been computed, run compute_distance first."
@@ -31,6 +45,9 @@ class DynamicTimeWarping:
 
     @property
     def warp_path(self) -> list[tuple[int, int]]:
+        """
+        The warp path is a list of tuples mapping the elements of the first time series
+        to that of the second one to minimize the distance between them."""
         if not hasattr(self, "_warp_path"):
             raise AttributeError(
                 "Warp path has not been computed, run compute_distance first."
@@ -49,6 +66,9 @@ class DynamicTimeWarping:
         return dist_matrix
 
     def compute_distance(self) -> float:
+        """
+        Runs the DTW algorithm to compute the distance between the two time series.
+        """
         n, m = self._dist_matrix.shape
 
         dtw: Matrix[Literal["N M"], Float] = np.zeros((n, m))
@@ -89,6 +109,12 @@ class DynamicTimeWarping:
         return dist
 
     def plot(self, args: PlotOptions) -> None:
+        """
+        Plots the cost matrix as an heatmap and the warp path on top of it.
+
+        Parameters:
+            args: The plot options
+        """
         fig, ax = plt.subplots(figsize=(8, 8))
         ax = sbn.heatmap(
             self.cost_matrix,
