@@ -1,10 +1,9 @@
-import warnings
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import numpy as np
 import pandas as pd
 
-from src.structs import Indicator
+from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 
@@ -55,24 +54,52 @@ def get_time_periods_colums(columns: Any | list[str]) -> list[str]:
 
 
 def convert_to_matrix(
-    df: pd.DataFrame, indicator: Indicator
-) -> Matrix[Literal["M N"], Float]:
+    df: pd.DataFrame, indicator: Indicator, country: Optional[Country] = None
+) -> Matrix[Literal["N"], Float]:
     """
     Convert the dataframe to a matrix containing the values of the given indicator
 
     Parameters:
         df: The dataframe
-        indicator: The indicator
+        indicator: The indicator to be extracted
+        country: The country to be extracted
 
     Returns:
         The matrix containing the values of the given indicator
     """
     # Get row corresponding to the given indicator
     dataframe = df[df["Indicator Name"].str.contains(indicator.value)]
-    # Get only the rows corresponding to the time periods
-    colums: list[str] = get_time_periods_colums(dataframe.columns)
-    dataframe = dataframe[colums]
 
-    if len(dataframe > 1):
-        warnings.warn(f"Multiple rows refer to indicator {indicator.value}")
-    return dataframe.to_numpy(dtype=np.float32)
+    if country is not None:
+        # Get only the row corresponding to the country
+        dataframe = dataframe[dataframe["Country Code"] == country.value]
+
+    return dataframe["Value"].to_array()
+
+
+def convert_to_structured_matrix(
+    df: pd.DataFrame, indicator: Indicator, country: Optional[Country] = None
+) -> Matrix[Literal["N"], Float]:
+    """
+    Convert the dataframe to a matrix containing the values of the given indicator. The
+    matrix is structured and contains the date associated as well: each row is a tuple
+    (value, date).
+
+    Parameters:
+        df: The dataframe
+        indicator: The indicator
+        country: The country to be extracted
+
+    Returns:
+        The matrix containing the values of the given indicator
+    """
+    # Get row corresponding to the given indicator
+    dataframe = df[df["Indicator Name"].str.contains(indicator.value)]
+
+    if country is not None:
+        # Get only the row corresponding to the country
+        dataframe = dataframe[dataframe["Country Code"] == country.value]
+
+    data = dataframe[["Value", "Date"]].to_records(index=False)
+
+    return np.array(data, dtype=[("Value", "f8"), ("Date", "datetime64[D]")])

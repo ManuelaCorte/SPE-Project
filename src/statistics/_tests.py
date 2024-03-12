@@ -2,9 +2,12 @@ from typing import Any, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.stats as stats
 from matplotlib.figure import Figure
 from statsmodels.graphics.correlation import plot_corr_grid
+from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.stats.stattools import durbin_watson
 from statsmodels.tsa.stattools import adfuller, kpss
 
 from src.structs import PlotOptions, SignificanceResult, StationarityTest
@@ -97,3 +100,82 @@ def stationarity(
     )
 
     return adf_test, kpss_test
+
+
+def homoscedasticity(
+    x: Matrix[Literal["N"], Float]
+) -> tuple[SignificanceResult, SignificanceResult]:
+    """
+    Tests for homoscedasticity in populations using the Bartlett and Levene tests.
+
+    The Bartlett test is used to test the null hypothesis that all input samples are from populations
+    with equal variances. The Levene test is similar, but better for non-normal populations.
+
+    Parameters:
+        x: The populations to check for homoscedasticity.
+
+    Returns:
+        The Bartlett and Levene test results.
+    """
+
+    stat, pvalue = stats.bartlett(x)
+    bartlett = SignificanceResult(
+        "Bartlett", "The variances of the populations are equal", stat, pvalue
+    )
+
+    stat, pvalue = stats.levene(x)
+    levene = SignificanceResult(
+        "Levene", "The variances of the populations are equal", stat, pvalue
+    )
+
+    return bartlett, levene
+
+
+def autocorrelation(
+    residuals: Matrix[Literal["N"], Float], max_lag: int
+) -> tuple[SignificanceResult, SignificanceResult, SignificanceResult]:
+    """
+    Tests for autocorrelation in the residuals using the and the Ljung-Box, Box-Pierce test and
+    Durbin Watson test.
+
+    The Ljung-Box test is used to test for the absence of serial correlation in a time series. The
+    Box-Pierce test is a simplified version of the Ljung-Box test.
+
+    The Durbin-Watson test is used to detect the presence of autocorrelation at lag 1 in the residuals
+    and assumes the errors are the result of a first order autoregression.
+
+    Parameters:
+        residuals: The residuals to check for autocorrelation.
+        max_lag: The maximum number of lags to include in the test.
+
+    Returns:
+        The Ljung-Box, Box-Pierce and Durbin-Watson test results.
+    """
+
+    test: pd.DataFrame = acorr_ljungbox(
+        residuals, boxpierce=True, lags=max_lag, return_df=True
+    )
+
+    ljung = SignificanceResult(
+        "Ljung-Box",
+        "Any of a group of autocorrelations of a time series is different from zero",
+        test["lb_stat"],  # type: ignore
+        test["lb_pvalue"],  # type: ignore
+    )
+
+    pierce = SignificanceResult(
+        "Box-Pierce",
+        "The residuals are not autocorrelated / is white noise",
+        test["bp_stat"],  # type: ignore
+        test["bp_pvalue"],  # type: ignore
+    )
+
+    dw_test: float = durbin_watson(residuals)
+    dw = SignificanceResult(
+        "Durbin-Watson",
+        "The residuals are not autocorrelated",
+        dw_test,
+        0,
+    )
+
+    return ljung, pierce, dw

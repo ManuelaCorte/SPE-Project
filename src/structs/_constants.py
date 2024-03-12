@@ -42,10 +42,9 @@ class Indicator(StrEnum):
     Enum containing the indicators we are interested in.
     """
 
-    GDP = "Gross Domestic Product"
-    IR = "Interest Rates"
-    CPIDX = "Consumer Price Index"
-    CPI = "Consumer Price Inflation"
+    GDP = "Gross Domestic Product, Real, Seasonally Adjusted, Domestic Currency"
+    IR = "Financial, Interest Rates, Lending Rate, Percent per annum"
+    CPI = "Prices, Consumer Price Index, All items, Index"
 
     @staticmethod
     def get_all_names() -> list[str]:

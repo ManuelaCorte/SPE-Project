@@ -1,27 +1,19 @@
+import os
 import warnings
-from pprint import pprint
 
 import pandas as pd
-from matplotlib import pyplot as plt
 
-from src.data import convert_to_matrix, remove_empty_values
-from src.statistics import correlation, stationarity
-from src.structs import Indicator, PlotOptions
+from src.data import clean_dataset, convert_to_structured_matrix
+from src.structs import Country, Indicator
 
 warnings.simplefilter(action="ignore", category=DeprecationWarning)
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 if __name__ == "__main__":
-    df = pd.read_csv("data/cleaned/united_states/filtered_by_month.csv")
-    df = remove_empty_values(df, "out.csv")
-    IR = convert_to_matrix(df, Indicator.IR)
-    CPI = convert_to_matrix(df, Indicator.CPIDX)
+    if os.path.exists("data/cleaned/dataset.csv"):
+        df = pd.read_csv("data/cleaned/dataset.csv")
+    else:
+        df = clean_dataset(save_intermediate=True)
 
-    adf, kpss = stationarity(CPI.squeeze())
-
-    pprint(
-        correlation(
-            [IR.squeeze(), CPI.squeeze()],
-            PlotOptions("correlation", "Correlation", "IR", "CPI", [], False),
-        )
-    )
-    plt.show()
+    matrix = convert_to_structured_matrix(df, Indicator.IR, Country.UNITED_STATES)
+    print(matrix)
