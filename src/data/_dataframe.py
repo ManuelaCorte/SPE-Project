@@ -102,4 +102,4 @@ def convert_to_structured_matrix(
 
     data = dataframe[["Value", "Date"]].to_records(index=False)
 
-    return np.array(data, dtype=[("Value", "f8"), ("Date", "datetime64[D]")])
+    return np.array(data, dtype=[("Value", "f8"), ("Date", "O")])
