@@ -167,5 +167,10 @@ cython_debug/
 
 # Raw dataset
 *.csv
-/data/
 !data/raw/*.csv
+!data/cleaned/*.csv
+
+# Results plots
+*.png
+*.jpeg
+*.jpg
