@@ -1,0 +1,59 @@
+# Simulation and Perfomance Evaluation Project
+
+## Setting up the project
+
+To get the project up and running, you need to clone the repository and navigate to the project directory.
+
+```
+git clone https://github.com/ManuelaCorte/SPE-Project.git
+cd SPE-Project
+```
+
+The required dependencies can be installed using [Poetry](https://python-poetry.org/docs/). Once Poetry is installed, run the following command to install the dependencies:
+
+```
+poetry install
+```
+
+Alternatively, you can install the dependencies system-wise using pip (not recommended):
+
+```
+pip install -r requirements.txt
+```
+
+## Running the project
+
+To run any file, you can either use the `poetry run` command or activate the virtual environment created by Poetry by running `poetry shell`.
+
+### Data generation
+
+The raw datasets are saved in the `data/raw` directory. To generate the datasets, run the following command:
+
+```
+poetry run python -m src.data_generation
+```
+
+The final dataset will be saved in the `data/processed` directory, while the specific countries datasets will be saved in the `data/intermediate` directory.
+
+## Contributing
+
+In order to keep the project organized, pre-commit hooks are used. To install them, run the following command:
+
+```
+poetry run pre-commit install
+poetry run pre-commit install-hooks
+```
+
+The pre-commit hooks will run every time you commit changes to the repository. If any of the hooks fail, the commit will be aborted. If you want to run the hooks manually, you can do so by running the following command:
+
+```
+poetry run pre-commit run --all-files
+```
+
+These hooks are also run by GitHub Actions on every push.
+
+Moreover, the project is fully typed using [Pyright](https://microsoft.github.io/pyright/#/). Pyright configurations are specified inside the `pyproject.toml` file. To check the correctness of type hints, run the following command:
+
+```
+poetry run pyright
+```
