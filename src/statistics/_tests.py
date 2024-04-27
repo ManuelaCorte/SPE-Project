@@ -79,6 +79,21 @@ def correlation(
 def stationarity(
     x: Matrix[Literal["N"], Float], max_lag: Optional[int] = None
 ) -> tuple[StationarityTest, StationarityTest]:
+    """
+    Tests for stationarity of a time series using the following tests:
+    - Augmented Dickey-Fuller test: Tests the null hypothesis that a unit root is present in a
+    time series characteristic polynomial.
+    - Kwiatkowski-Phillips-Schmidt-Shin test: Tests the null hypothesis that the time series is
+    stationary around a determinisitc trend, notice that this trend doesn't necessarly means
+    stationarity around a constant value.
+
+    Parameters:
+        x: The time series to check for stationarity.
+        max_lag: The maximum number of lags to include in the test.
+
+    Returns:
+        The Augmented Dickey-Fuller and Kwiatkowski-Phillips-Schmidt-Shin test results.
+    """
     stat, pvalue, lags, _, critvalues, *_ = adfuller(x, maxlag=max_lag)  # type: ignore
     adf_test: StationarityTest = StationarityTest(
         "Augmented Dickey-Fuller",

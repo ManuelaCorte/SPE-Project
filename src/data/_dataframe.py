@@ -88,7 +88,7 @@ def convert_to_structured_matrix(
     Parameters:
         df: The dataframe
         indicator: The indicator
-        country: The country to be extracted
+        country: The country to be extracted. If None, all the countries are considered
 
     Returns:
         The matrix containing the values of the given indicator

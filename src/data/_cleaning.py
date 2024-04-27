@@ -9,18 +9,16 @@ from src.structs import Country, Indicator, TimePeriod
 from ._dataframe import get_indicators_columns, get_time_periods_colums
 
 
-def clean_dataset(save_intermediate: bool = False) -> DataFrame:
+def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataFrame:
     """
-    Read the raw dataset and clean it by removing unused indicators and filtering by country and by specific
-    time rate (i.e. year, quarter, month).
+    Read the raw dataset and clean it by removing unused indicators, filtering only G20 countries and taking monthly data. For
+    GDP, the quarterly data is interpolated to get monthly data. The dataframe is then reshaped to have the form
+    Country | Indicator | Year | Month | Value
 
     Parameters:
-        country: The country to filter by. If the country is None, only the
-            rows corresponding to all g20 countries will be returned.
-        time_granularity: The time granularity to filter by.
-        save_intermediate: If True, the intermediate dataframes will be saved to csv files.
-        force: If True, the function will not check if the output file already exists.
-
+        save_intermediate: If True, the intermediate dataframes (filtered indicators and country spcific datasets)
+        will be saved to csv files.
+        force: If True, all intermediate and final files will be removed and the function will start from scratch.
     Returns:
         The dataframe containing the cleaned data.
     """
@@ -28,6 +26,12 @@ def clean_dataset(save_intermediate: bool = False) -> DataFrame:
     intermediate_file_path = "data/intermediate/"
     if not os.path.exists(intermediate_file_path):
         os.makedirs(intermediate_file_path)
+
+    if force:
+        for file in os.listdir(intermediate_file_path):
+            os.remove(intermediate_file_path + file)
+        for file in os.listdir("data/cleaned/"):
+            os.remove("data/cleaned/" + file)
 
     reader: TextFileReader = pd.read_csv(
         "data/raw/IFS_09-26-2023 00-50-38-77_timeSeries.csv",
@@ -48,7 +52,8 @@ def clean_dataset(save_intermediate: bool = False) -> DataFrame:
             continue
         print("Processing", country.name.capitalize())
         gdp_interest = _get_monthly_data(df, country)
-        inflation = clean_inflation_dataset(country)
+        gdp_interest = _convert_to_percentage(gdp_interest)
+        inflation = _clean_inflation_dataset(country)
         data = pd.concat([gdp_interest, inflation], ignore_index=True)
         data["Date"] = data["Year"].astype(str) + "-" + data["Month"].astype(str)
         countries.append(data)
@@ -67,10 +72,10 @@ def clean_dataset(save_intermediate: bool = False) -> DataFrame:
             "Country Code",
             "Country Name",
             "Indicator Name",
-            "Value",
             "Date",
             "Year",
             "Month",
+            "Value",
         ]
     ]
 
@@ -78,23 +83,21 @@ def clean_dataset(save_intermediate: bool = False) -> DataFrame:
     return df
 
 
-def clean_inflation_dataset(
+###################################################################################################
+### Private methods
+###################################################################################################
+def _clean_inflation_dataset(
     country: Country,
 ) -> DataFrame:
     """
-    Read the raw dataset and clean it by removing unused indicators and filtering by country and by specific
-    time rate (i.e. year, quarter, month).
+    Read the raw dataset and clean it by removing unused indicators taking quarterly data and filtering by country.
 
     Parameters:
-        country: The country to filter by. If the country is None, only the
-            rows corresponding to all g20 countries will be returned.
-        time_granularity: The time granularity to filter by.
-        save_intermediate: If True, the intermediate dataframes will be saved to csv files.
-        force: If True, the function will not check if the output file already exists.
+        country: The country to filter by. If the country is None
 
     Returns:
-        The dataframe containing the cleaned data."""
-
+        The dataframe containing the cleaned data.
+    """
     df = pd.read_csv(
         "data/raw/Inflation data - hcpi_m.csv",
         dtype=str,
@@ -125,11 +128,6 @@ def clean_inflation_dataset(
     df = _reshape_dataframe(df)
 
     return df
-
-
-###################################################################################################
-### Private methods
-###################################################################################################
 
 
 def _remove_unused_information(reader: TextFileReader) -> DataFrame:
@@ -213,8 +211,8 @@ def _get_different_time_granularities(
 
 
 def _get_monthly_data(dataframe: DataFrame, country: Country) -> DataFrame:
-    """Returns dataframe with monthly data and interpolation of quarter data for gdp. The dataframe is then reshaped to have the form
-    Country | Indicator | Year | Month | Value
+    """Returns dataframe with monthly data and interpolation of quarter data for gdp.
+    The dataframe is then reshaped to have the form Country | Indicator | Year | Month | Value
 
     Parameters:
         dataframe: The dataframe to filter.
@@ -309,7 +307,8 @@ def _rename_time_period_columns(
     dataframe: DataFrame, time_period: TimePeriod
 ) -> DataFrame:
     """
-    Rename to time periods columns to match the other datasets.
+    Rename to time periods columns to match the other datasets. The columns are renamed to the format
+    YYYY for year, YYYYQX for quarter and YYYYMX for month.
 
     Parameters:
         dataframe: The dataframe to filter.
@@ -346,3 +345,20 @@ def _rename_time_period_columns(
     )
 
     return dataframe
+
+
+def _convert_to_percentage(df: DataFrame) -> DataFrame:
+    """
+    Extract the GDP values from the dataset and add them to the dataframe.
+
+    Parameters:
+        df: The dataframe to extract the GDP values from.
+
+    Returns:
+        The dataframe with the GDP values added.
+    """
+    gdp = df[df["Indicator Name"].str.contains(Indicator.GDP.value)].copy()
+    ir = df[df["Indicator Name"].str.contains(Indicator.IR.value)].copy()
+    gdp["Value"] = df["Value"].pct_change() * 100
+
+    return pd.concat([gdp, ir], ignore_index=True)
