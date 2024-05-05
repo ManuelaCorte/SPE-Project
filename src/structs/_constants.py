@@ -10,27 +10,27 @@ class Country(Enum):
     https://www.imf.org/external/pubs/ft/weo/2022/02/weodata/co.pdf
     """
 
-    ARGENTINA = 213
-    AUSTRALIA = 193
+    # ARGENTINA = 213
+    # AUSTRALIA = 193
     BRAZIL = 223
     CANADA = 156
-    FRANCE = 132
-    GERMANY = 134
+    # FRANCE = 132
+    # GERMANY = 134
     INDIA = 534
     INDONESIA = 536
     ITALY = 136
-    CHINA = 924
+    # CHINA = 924
     JAPAN = 158
     MEXICO = 273
     RUSSIA = 922
-    SAUDI_ARABIA = 456
+    # SAUDI_ARABIA = 456
     SOUTH_AFRICA = 199
     SOUTH_KOREA = 542
-    TURKEY = 186
-    UNITED_KINGDOM = 122
+    # TURKEY = 186
+    # UNITED_KINGDOM = 122
     UNITED_STATES = 111
-    EUROPEAN_UNION = 163
-    G20 = 0
+    # EUROPEAN_UNION = 163
+    # G20 = 0
 
     @staticmethod
     def get_all_codes() -> list[str]:
@@ -44,7 +44,8 @@ class Indicator(StrEnum):
 
     GDP = "Gross Domestic Product, Real, Seasonally Adjusted, Domestic Currency"
     IR = "Financial, Interest Rates, Lending Rate, Percent per annum"
-    CPI = "Prices, Consumer Price Index, All items, Index"
+    # CPI = "Prices, Consumer Price Index, All items, Index"
+    CPI = "Headline Consumer Price Index"
 
     @staticmethod
     def get_all_names() -> list[str]:
