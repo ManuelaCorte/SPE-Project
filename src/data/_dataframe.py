@@ -68,13 +68,13 @@ def convert_to_matrix(
         The matrix containing the values of the given indicator
     """
     # Get row corresponding to the given indicator
-    dataframe = df[df["Indicator Name"].str.contains(indicator.value)]
+    dataframe = df[df["Indicator Name"] == indicator.value]
 
     if country is not None:
         # Get only the row corresponding to the country
         dataframe = dataframe[dataframe["Country Code"] == country.value]
 
-    return dataframe["Value"].to_array()
+    return dataframe["Value"].to_numpy()
 
 
 def convert_to_structured_matrix(
@@ -94,7 +94,7 @@ def convert_to_structured_matrix(
         The matrix containing the values of the given indicator
     """
     # Get row corresponding to the given indicator
-    dataframe = df[df["Indicator Name"].str.contains(indicator.value)]
+    dataframe = df[df["Indicator Name"] == indicator.value]
 
     if country is not None:
         # Get only the row corresponding to the country
