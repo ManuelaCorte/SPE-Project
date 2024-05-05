@@ -25,7 +25,5 @@ repos:
     rev: "1.7.1"
     hooks:
       - id: poetry-check
-      - id: poetry-lock
       - id: poetry-export
         args: [--without-hashes]
-      - id: poetry-install
