@@ -36,7 +36,11 @@ def serialize_country_data(country: Country):
             getlist(IR).pop()
         else: 
             getlist(GDP).pop()
-    return country_indicators
+      
+    country_data: dict[Indicator, list[float]] = {}
+    for indicator in Indicator:
+        country_data[indicator] = country_indicators[indicator]['values']
+    return country_data
     
       
 
@@ -46,11 +50,11 @@ if __name__ == "__main__":
     else:
         df = clean_dataset(save_intermediate=True)
 
-    country_data: dict[Country, dict[Indicator, dict[str, list[float]]]] = {}
+    countries_data: dict[Country, dict[Indicator, list[float]]] = {}
 
     for country in Country:
-      country_data[country] = serialize_country_data(country)
-    print(country_data)
+      countries_data[country] = serialize_country_data(country)
+    print(countries_data)
 
     
 
