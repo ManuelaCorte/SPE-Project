@@ -4,6 +4,8 @@ import pandas as pd
 from src.data import clean_dataset, convert_to_structured_matrix
 from src.structs import Country, Indicator
 
+GDP, IR, CPI = Indicator
+
 def serialize_country_data(country: Country):
     country_indicators: dict[Indicator, dict[str, list[float]]] = {}
     for indicator in Indicator:
@@ -19,21 +21,21 @@ def serialize_country_data(country: Country):
     def getlist(indicator: Indicator):
         return country_indicators[indicator]['years']
     
-    while getlist(Indicator.CPI)[0] != getlist(Indicator.GDP)[0] or getlist(Indicator.CPI)[0] != getlist(Indicator.IR)[0]:
-        if getlist(Indicator.CPI)[0] < getlist(Indicator.GDP)[0] and getlist(Indicator.CPI)[0] < getlist(Indicator.IR)[0]:
-            getlist(Indicator.CPI).pop(0)
-        elif getlist(Indicator.IR)[0] < getlist(Indicator.GDP)[0]:
-            getlist(Indicator.IR).pop(0)
+    while getlist(CPI)[0] != getlist(GDP)[0] or getlist(CPI)[0] != getlist(IR)[0]:
+        if getlist(CPI)[0] < getlist(GDP)[0] and getlist(CPI)[0] < getlist(IR)[0]:
+            getlist(CPI).pop(0)
+        elif getlist(IR)[0] < getlist(GDP)[0]:
+            getlist(IR).pop(0)
         else: 
-            getlist(Indicator.GDP).pop(0)
+            getlist(GDP).pop(0)
 
-    while getlist(Indicator.CPI)[-1] != getlist(Indicator.GDP)[-1] or getlist(Indicator.CPI)[-1] != getlist(Indicator.IR)[-1]:
-        if getlist(Indicator.CPI)[-1] > getlist(Indicator.GDP)[-1] and getlist(Indicator.CPI)[-1] > getlist(Indicator.IR)[-1]:
-            getlist(Indicator.CPI).pop()
-        elif getlist(Indicator.IR)[-1] > getlist(Indicator.GDP)[-1]:
-            getlist(Indicator.IR).pop()
+    while getlist(CPI)[-1] != getlist(GDP)[-1] or getlist(CPI)[-1] != getlist(IR)[-1]:
+        if getlist(CPI)[-1] > getlist(GDP)[-1] and getlist(CPI)[-1] > getlist(IR)[-1]:
+            getlist(CPI).pop()
+        elif getlist(IR)[-1] > getlist(GDP)[-1]:
+            getlist(IR).pop()
         else: 
-            getlist(Indicator.GDP).pop()
+            getlist(GDP).pop()
     return country_indicators
     
       
