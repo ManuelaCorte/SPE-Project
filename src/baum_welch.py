@@ -170,7 +170,8 @@ if __name__ == "__main__":
 
     countries_data: dict[Country, dict[Indicator, list[float]]] = {}
 
-    for country in Country:
+    countries = Country
+    for country in countries:
       countries_data[country] = serialize_country_data(country)
     # print(countries_data[Country.ITALY])
 
@@ -182,7 +183,7 @@ if __name__ == "__main__":
 
     # * Baum-Welch algorithm
 
-    epochs = 10
+    epochs = 1
     for _ in tqdm(range(epochs), desc='training', unit='epoch'):
         a = hidden_markov_chain.transitions
         b = known_var_markov_chain.transitions
@@ -192,9 +193,9 @@ if __name__ == "__main__":
         xis: list[npt.NDArray[np.generic]] = []
         Ys: list[list[float]] = []
         Ts: list[int] = []
-        R = len(Country.get_all_countries())
+        R = len(countries)
 
-        for country in Country.get_all_countries():
+        for country in countries:
             country_data = countries_data[country]
             Y = country_data[GDP]
             Ys.append(Y)
