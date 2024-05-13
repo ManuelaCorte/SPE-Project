@@ -170,12 +170,13 @@ if __name__ == "__main__":
 
     countries_data: dict[Country, dict[Indicator, list[float]]] = {}
 
-    countries = Country
+    # countries = Country
+    countries = [Country.BRAZIL]
     for country in countries:
       countries_data[country] = serialize_country_data(country)
     # print(countries_data[Country.ITALY])
 
-    starting_country_data = countries_data[Country.ITALY]
+    starting_country_data = countries_data[countries[0]]
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(starting_country_data)
     print(hidden_markov_chain)
     print(known_var_markov_chain)
