@@ -51,10 +51,37 @@ class MarkovChain:
         graph.attr(rankdir="LR", size="8,5")
 
         for i, state in enumerate(self.states):
-            graph.node(str(i), label=f"{state}")
+            graph.node(str(i), label=f"{state:.2f}")
 
         for i, row in enumerate(self.transitions):
             for j, transistion in enumerate(row):
-                graph.edge(str(i), str(j), label=f"{transistion}")
+                graph.edge(str(i), str(j), label=f"{transistion:.2f}")
+
+        graph.render(f"data/results/{filename}")
+
+    def to_image_with_known_var(self, filename: str, known_var_markov_chain: 'MarkovChain'):
+        """
+        Creates a graph image of the Markov Chain, with a linked known variable Markov Chain.
+
+        Parameters:
+            filename: The name of the file to save the image to.
+        """
+        graph = Digraph("Markov Chain", filename=filename, format="png")
+        graph.attr(rankdir="LR", size="8,5")
+
+        for i, state in enumerate(self.states):
+            graph.node(str(i), label=f"H{i}-{state:.2f}")
+
+        for i, row in enumerate(self.transitions):
+            for j, transistion in enumerate(row):
+                graph.edge(str(i), str(j), label=f"h-{transistion:.2f}")
+
+        n_hidden_states = len(self.states)
+        for i, state in enumerate(known_var_markov_chain.states):
+            graph.node(str(i+n_hidden_states), label=f"K{i+n_hidden_states}-{state:.2f}")
+
+        for i, row in enumerate(known_var_markov_chain.transitions):
+            for j, transistion in enumerate(row):
+                graph.edge(str(i), str(j+n_hidden_states), label=f"k-{transistion:.2f}")
 
         graph.render(f"data/results/{filename}")

@@ -176,6 +176,7 @@ if __name__ == "__main__":
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(countries_data[Country.ITALY])
     print(hidden_markov_chain)
     print(known_var_markov_chain)
+    hidden_markov_chain.to_image_with_known_var("hidden_markov_chain", known_var_markov_chain)
     
 
       
