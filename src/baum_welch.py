@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import numpy.typing as npt
 from enum import Enum
-# from tqdm import tqdm
+from tqdm import tqdm
 
 from src.data import clean_dataset, convert_to_structured_matrix
 from src.structs import Country, Indicator
@@ -182,8 +182,8 @@ if __name__ == "__main__":
 
     # * Baum-Welch algorithm
 
-    # for _ in tqdm(range(10)):
-    for _ in range(10):
+    epochs = 10
+    for _ in tqdm(range(epochs), desc='training', unit='epoch'):
         a = hidden_markov_chain.transitions
         b = known_var_markov_chain.transitions
         pi = hidden_markov_chain.states
