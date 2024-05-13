@@ -160,7 +160,6 @@ def construct_starting_markov_chain(country_data: dict[Indicator, list[float]]):
 
     return hidden_markov_chain, known_var_markov_chain
 
-
 if __name__ == "__main__":
     if os.path.exists("data/cleaned/dataset.csv"):
         df = pd.read_csv("data/cleaned/dataset.csv")
@@ -173,10 +172,67 @@ if __name__ == "__main__":
       countries_data[country] = serialize_country_data(country)
     # print(countries_data[Country.ITALY])
 
-    hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(countries_data[Country.ITALY])
+    starting_country_data = countries_data[Country.ITALY]
+    hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(starting_country_data)
     print(hidden_markov_chain)
     print(known_var_markov_chain)
-    hidden_markov_chain.to_image_with_known_var("hidden_markov_chain", known_var_markov_chain)
-    
+    # hidden_markov_chain.to_image_with_known_var("hidden_markov_chain", known_var_markov_chain)
+
+    # * Baum-Welch algorithm
+
+    a = hidden_markov_chain.transitions
+    b = known_var_markov_chain.transitions
+    pi = hidden_markov_chain.states
+    Y = starting_country_data[GDP]
+    T = len(Y)
+
+    alpha = np.zeros((4, T))
+    for i in range(4):
+        for t in range(T):
+            y = KnownVariables.get_variable(Y[t]).value
+            if t == 0:
+                alpha[i][t] = pi[i] * b[i][y]
+            else:
+                alpha[i][t] = b[i][y] * np.sum([alpha[j][t - 1] * a[j][i] for j in range(4)])
+
+    beta = np.zeros((4, T))
+    for i in range(4):
+        for t in range(T - 1, -1, -1):
+            if t == T - 1:
+                beta[i][t] = 1
+            else:
+                y = KnownVariables.get_variable(Y[t + 1]).value
+                beta[i][t] = np.sum([a[i][j] * b[j][y] * beta[j][t + 1] for j in range(4)])
+
+    gamma = np.zeros((4, T))
+    for t in range(T):
+        for i in range(4):
+            gamma[i][t] = alpha[i][t] * beta[i][t] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+
+    xi = np.zeros((4, 4, T))
+    for t in range(T - 1):
+        for i in range(4):
+            for j in range(4):
+                y = KnownVariables.get_variable(Y[t + 1]).value
+                xi[i][j][t] = alpha[i][t] * a[i][j] * b[j][y] * beta[j][t + 1] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+
+    for i in range(4):
+        pi[i] = gamma[i][0]
+        for j in range(4):
+            a[i][j] = np.sum([xi[i][j][t] for t in range(T - 1)]) / np.sum([gamma[i][t] for t in range(T - 1)])
+        for j in range(2):
+            b[i][j] = np.sum([gamma[i][t] for t in range(T) if KnownVariables.get_variable(Y[t]).value == j]) / np.sum([gamma[i][t] for t in range(T)])
+
+    hidden_markov_chain.transitions = a
+    known_var_markov_chain.transitions = b
+    hidden_markov_chain.states = pi
+
+    print(hidden_markov_chain)
+    print(np.sum(hidden_markov_chain.states))
+    for i in range(4):
+        print(np.sum(hidden_markov_chain.transitions[i]))
+    print(known_var_markov_chain)
+    # hidden_markov_chain.to_image_with_known_var("hidden_markov_chain_2", known_var_markov_chain)
+
 
       
