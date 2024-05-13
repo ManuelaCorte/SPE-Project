@@ -1,8 +1,7 @@
 from typing import Literal
-
 from graphviz import Digraph
-
 from src.utils import Float, Matrix
+import numpy as np
 
 
 class MarkovChain:
@@ -25,6 +24,10 @@ class MarkovChain:
         self.states = states
         self.transitions = transitions
         self.initial_state = initial_state
+
+    def __str__(self) -> str:
+        np.set_printoptions(precision=2)
+        return f"Markov Chain(\n\tstates={self.states},\n\ttransitions={self.transitions},\n\tinitial_state={self.initial_state}\n)"
 
     def nsteps(self, n: int) -> Matrix[Literal["N"], Float]:
         """
