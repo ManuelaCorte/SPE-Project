@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 import numpy as np
+import numpy.typing as npt
 from enum import Enum
+# from tqdm import tqdm
 
 from src.data import clean_dataset, convert_to_structured_matrix
 from src.structs import Country, Indicator
@@ -180,52 +182,75 @@ if __name__ == "__main__":
 
     # * Baum-Welch algorithm
 
-    a = hidden_markov_chain.transitions
-    b = known_var_markov_chain.transitions
-    pi = hidden_markov_chain.states
-    Y = starting_country_data[GDP]
-    T = len(Y)
+    # for _ in tqdm(range(10)):
+    for _ in range(10):
+        a = hidden_markov_chain.transitions
+        b = known_var_markov_chain.transitions
+        pi = hidden_markov_chain.states
 
-    alpha = np.zeros((4, T))
-    for i in range(4):
-        for t in range(T):
-            y = KnownVariables.get_variable(Y[t]).value
-            if t == 0:
-                alpha[i][t] = pi[i] * b[i][y]
-            else:
-                alpha[i][t] = b[i][y] * np.sum([alpha[j][t - 1] * a[j][i] for j in range(4)])
+        gammas: list[npt.NDArray[np.generic]] = []
+        xis: list[npt.NDArray[np.generic]] = []
+        Ys: list[list[float]] = []
+        Ts: list[int] = []
+        R = len(Country.get_all_countries())
 
-    beta = np.zeros((4, T))
-    for i in range(4):
-        for t in range(T - 1, -1, -1):
-            if t == T - 1:
-                beta[i][t] = 1
-            else:
-                y = KnownVariables.get_variable(Y[t + 1]).value
-                beta[i][t] = np.sum([a[i][j] * b[j][y] * beta[j][t + 1] for j in range(4)])
+        for country in Country.get_all_countries():
+            country_data = countries_data[country]
+            Y = country_data[GDP]
+            Ys.append(Y)
 
-    gamma = np.zeros((4, T))
-    for t in range(T):
+            T = len(Y)
+            Ts.append(T)
+
+            alpha = np.zeros((4, T))
+            for i in range(4):
+                for t in range(T):
+                    y = KnownVariables.get_variable(Y[t]).value
+                    if t == 0:
+                        alpha[i][t] = pi[i] * b[i][y]
+                    else:
+                        alpha[i][t] = b[i][y] * np.sum([alpha[j][t - 1] * a[j][i] for j in range(4)])
+
+            beta = np.zeros((4, T))
+            for i in range(4):
+                for t in range(T - 1, -1, -1):
+                    if t == T - 1:
+                        beta[i][t] = 1
+                    else:
+                        y = KnownVariables.get_variable(Y[t + 1]).value
+                        beta[i][t] = np.sum([a[i][j] * b[j][y] * beta[j][t + 1] for j in range(4)])
+
+            gamma = np.zeros((4, T))
+            for t in range(T):
+                for i in range(4):
+                    gamma[i][t] = alpha[i][t] * beta[i][t] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+
+            xi = np.zeros((4, 4, T))
+            for t in range(T - 1):
+                for i in range(4):
+                    for j in range(4):
+                        y = KnownVariables.get_variable(Y[t + 1]).value
+                        xi[i][j][t] = alpha[i][t] * a[i][j] * b[j][y] * beta[j][t + 1] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+
+            gammas.append(gamma)
+            xis.append(xi)
+
         for i in range(4):
-            gamma[i][t] = alpha[i][t] * beta[i][t] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
-
-    xi = np.zeros((4, 4, T))
-    for t in range(T - 1):
-        for i in range(4):
+            pi[i] = np.sum([gammas[r][i][0] for r in range(R)]) / R
             for j in range(4):
-                y = KnownVariables.get_variable(Y[t + 1]).value
-                xi[i][j][t] = alpha[i][t] * a[i][j] * b[j][y] * beta[j][t + 1] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+                num = np.sum([xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)])
+                den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)])
+                if den == 0: continue
+                a[i][j] = num / den
+            for j in range(2):
+                num = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r]) if KnownVariables.get_variable(Ys[r][t]).value == j])
+                den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
+                if den == 0: continue
+                b[i][j] = num / den
 
-    for i in range(4):
-        pi[i] = gamma[i][0]
-        for j in range(4):
-            a[i][j] = np.sum([xi[i][j][t] for t in range(T - 1)]) / np.sum([gamma[i][t] for t in range(T - 1)])
-        for j in range(2):
-            b[i][j] = np.sum([gamma[i][t] for t in range(T) if KnownVariables.get_variable(Y[t]).value == j]) / np.sum([gamma[i][t] for t in range(T)])
-
-    hidden_markov_chain.transitions = a
-    known_var_markov_chain.transitions = b
-    hidden_markov_chain.states = pi
+        hidden_markov_chain.transitions = a
+        known_var_markov_chain.transitions = b
+        hidden_markov_chain.states = pi
 
     print(hidden_markov_chain)
     print(np.sum(hidden_markov_chain.states))
