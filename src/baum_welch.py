@@ -171,12 +171,12 @@ if __name__ == "__main__":
     countries_data: dict[Country, dict[Indicator, list[float]]] = {}
 
     # countries = Country
-    countries = [Country.BRAZIL]
+    countries = [Country.ITALY]
     for country in countries:
       countries_data[country] = serialize_country_data(country)
     # print(countries_data[Country.ITALY])
 
-    starting_country_data = countries_data[countries[0]]
+    starting_country_data = countries_data[Country.ITALY]
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(starting_country_data)
     print(hidden_markov_chain)
     print(known_var_markov_chain)
@@ -225,14 +225,14 @@ if __name__ == "__main__":
             gamma = np.zeros((4, T))
             for t in range(T):
                 for i in range(4):
-                    gamma[i][t] = alpha[i][t] * beta[i][t] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+                    gamma[i][t] = alpha[i][t] * beta[i][t] / np.sum([alpha[j][t] * beta[j][t] for j in range(4)])
 
             xi = np.zeros((4, 4, T))
             for t in range(T - 1):
                 for i in range(4):
                     for j in range(4):
                         y = KnownVariables.get_variable(Y[t + 1]).value
-                        xi[i][j][t] = alpha[i][t] * a[i][j] * b[j][y] * beta[j][t + 1] / np.sum([alpha[k][t] * beta[k][t] for k in range(4)])
+                        xi[i][j][t] = alpha[i][t] * a[i][j] * b[j][y] * beta[j][t + 1] / np.sum([alpha[k][t] * a[k][w] * beta[k][t+1] * b[w][y] for w in range(4) for k in range(4)])
 
             gammas.append(gamma)
             xis.append(xi)
@@ -242,12 +242,10 @@ if __name__ == "__main__":
             for j in range(4):
                 num = np.sum([xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)])
                 den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)])
-                if den == 0: continue
                 a[i][j] = num / den
             for j in range(2):
                 num = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r]) if KnownVariables.get_variable(Ys[r][t]).value == j])
                 den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
-                if den == 0: continue
                 b[i][j] = num / den
 
         hidden_markov_chain.transitions = a
