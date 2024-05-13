@@ -179,8 +179,13 @@ if __name__ == "__main__":
     starting_country_data = countries_data[Country.ITALY]
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(starting_country_data)
     print(hidden_markov_chain)
+    print(f'hidden states sum: {np.sum(hidden_markov_chain.states):.2f}')
+    for i in range(4):
+        print(f'hidden transitions {i}: {np.sum(hidden_markov_chain.transitions[i]):.2f}')
     print(known_var_markov_chain)
-    # hidden_markov_chain.to_image_with_known_var("hidden_markov_chain", known_var_markov_chain)
+    for i in range(4):
+        print(f'known transitions {i}: {np.sum(known_var_markov_chain.transitions[i]):.2f}')
+    # hidden_markov_chain.to_image_with_known_var("hidden_markov_chain_2", known_var_markov_chain)
 
     # * Baum-Welch algorithm
 
