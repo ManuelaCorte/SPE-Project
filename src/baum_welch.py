@@ -253,10 +253,12 @@ if __name__ == "__main__":
         hidden_markov_chain.states = pi
 
     print(hidden_markov_chain)
-    print(np.sum(hidden_markov_chain.states))
+    print(f'hidden states sum: {np.sum(hidden_markov_chain.states):.2f}')
     for i in range(4):
-        print(np.sum(hidden_markov_chain.transitions[i]))
+        print(f'hidden transitions {i}: {np.sum(hidden_markov_chain.transitions[i]):.2f}')
     print(known_var_markov_chain)
+    for i in range(4):
+        print(f'known transitions {i}: {np.sum(known_var_markov_chain.transitions[i]):.2f}')
     # hidden_markov_chain.to_image_with_known_var("hidden_markov_chain_2", known_var_markov_chain)
 
 
