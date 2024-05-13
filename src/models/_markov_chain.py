@@ -78,7 +78,7 @@ class MarkovChain:
 
         n_hidden_states = len(self.states)
         for i, state in enumerate(known_var_markov_chain.states):
-            graph.node(str(i+n_hidden_states), label=f"K{i+n_hidden_states}-{state:.2f}")
+            graph.node(str(i+n_hidden_states), label=f"K{i}-{state:.2f}")
 
         for i, row in enumerate(known_var_markov_chain.transitions):
             for j, transistion in enumerate(row):
