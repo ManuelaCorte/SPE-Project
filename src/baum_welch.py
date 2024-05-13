@@ -1,10 +1,31 @@
 import os
 import pandas as pd
+import numpy as np
+from enum import Enum
 
 from src.data import clean_dataset, convert_to_structured_matrix
 from src.structs import Country, Indicator
+from src.models import MarkovChain
 
 GDP, IR, CPI = Indicator
+
+class HiddenState(Enum):
+    I_IR_I_CPI = 0
+    I_IR_D_CPI = 1
+    D_IR_I_CPI = 2
+    D_IR_D_CPI = 3
+
+    @staticmethod
+    def get_all_states() -> list[int]:
+        return [state.value for state in HiddenState]
+    
+class KnownVariables(Enum):
+    I_GDP = 0
+    D_GDP = 1
+
+    @staticmethod
+    def get_all_variables() -> list[int]:
+        return [var.value for var in KnownVariables]
 
 def serialize_country_data(country: Country):
     '''
@@ -85,6 +106,11 @@ if __name__ == "__main__":
     for country in Country:
       countries_data[country] = serialize_country_data(country)
     print(countries_data[Country.ITALY])
+
+    # mc = MarkovChain(states=np.array([0.3, 0.7]), transistions=np.array([[0.7, 0.3], [0.3, 0.7]]), initial_state=0)
+    # print(mc.nsteps(2))
+    # print(mc.to_image('test'))
+
 
     
 
