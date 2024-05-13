@@ -13,17 +13,17 @@ class MarkovChain:
     def __init__(
         self,
         states: Matrix[Literal["N"], Float],
-        transistions: Matrix[Literal["N N"], Float],
+        transitions: Matrix[Literal["N N"], Float],
         initial_state: int,
     ) -> None:
         """
         Args:
             states: The initial probabilities of being in each state.
-            transistions: The probabilities of transitioning from one state to another.
+            transitions: The probabilities of transitioning from one state to another.
             initial_state: The initial state of the chain.
         """
         self.states = states
-        self.transistions = transistions
+        self.transitions = transitions
         self.initial_state = initial_state
 
     def nsteps(self, n: int) -> Matrix[Literal["N"], Float]:
@@ -35,7 +35,7 @@ class MarkovChain:
 
         Returns:
             The probabilities of being in every state after n steps."""
-        return self.states @ self.transistions**n
+        return self.states @ self.transitions**n
 
     def to_image(self, filename: str) -> None:
         """
@@ -50,7 +50,7 @@ class MarkovChain:
         for i, state in enumerate(self.states):
             graph.node(str(i), label=f"{state}")
 
-        for i, row in enumerate(self.transistions):
+        for i, row in enumerate(self.transitions):
             for j, transistion in enumerate(row):
                 graph.edge(str(i), str(j), label=f"{transistion}")
 
