@@ -230,25 +230,18 @@ if __name__ == "__main__":
             gamma = np.zeros((4, T))
             for t in range(T):
                 den = np.sum([alpha[j][t] * beta[j][t] for j in range(4)])
-                sum = 0
                 for i in range(4):
                     num = alpha[i][t] * beta[i][t]
                     gamma[i][t] = num / den
-                    sum += gamma[i][t]
-                print(f'gamma {t} sum: {sum:.2f}')
 
             xi = np.zeros((4, 4, T - 1))
             for t in range(T - 1):
                 y = KnownVariables.get_variable(Y[t + 1]).value
-                den = np.sum([alpha[k][t] * a[k][w] * beta[k][t+1] * b[w][y] for w in range(4) for k in range(4)])
-                sum = 0
+                den = np.sum([alpha[k][t] * a[k][w] * beta[w][t+1] * b[w][y] for w in range(4) for k in range(4)])
                 for i in range(4):
                     for j in range(4):
                         num = alpha[i][t] * a[i][j] * beta[j][t + 1] * b[j][y]
                         xi[i][j][t] = num / den
-                        sum += xi[i][j][t]
-                # ! this sum should be 1
-                print(f'xi {t} sum: {sum:.2f}')
 
             gammas.append(gamma)
             xis.append(xi)
