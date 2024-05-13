@@ -224,18 +224,18 @@ if __name__ == "__main__":
 
             gamma = np.zeros((4, T))
             for t in range(T):
+                den = np.sum([alpha[j][t] * beta[j][t] for j in range(4)])
                 for i in range(4):
                     num = alpha[i][t] * beta[i][t]
-                    den = np.sum([alpha[j][t] * beta[j][t] for j in range(4)])
                     gamma[i][t] = num / den
 
             xi = np.zeros((4, 4, T - 1))
             for t in range(T - 1):
+                y = KnownVariables.get_variable(Y[t + 1]).value
+                den = np.sum([alpha[k][t] * a[k][w] * beta[k][t+1] * b[w][y] for w in range(4) for k in range(4)])
                 for i in range(4):
                     for j in range(4):
-                        y = KnownVariables.get_variable(Y[t + 1]).value
                         num = alpha[i][t] * a[i][j] * beta[j][t + 1] * b[j][y]
-                        den = np.sum([alpha[k][t] * a[k][w] * beta[k][t+1] * b[w][y] for w in range(4) for k in range(4)])
                         xi[i][j][t] = num / den
 
             gammas.append(gamma)
@@ -243,13 +243,15 @@ if __name__ == "__main__":
 
         for i in range(4):
             pi[i] = np.sum([gammas[r][i][0] for r in range(R)]) / R
+
+            den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)])
             for j in range(4):
                 num = np.sum([xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)])
-                den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)])
                 a[i][j] = num / den
+                
+            den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
             for j in range(2):
                 num = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r]) if KnownVariables.get_variable(Ys[r][t]).value == j])
-                den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
                 b[i][j] = num / den
 
         hidden_markov_chain.transitions = a
