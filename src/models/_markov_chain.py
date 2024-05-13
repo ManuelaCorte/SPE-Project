@@ -26,7 +26,7 @@ class MarkovChain:
         self.initial_state = initial_state
 
     def __str__(self) -> str:
-        np.set_printoptions(precision=2, )
+        np.set_printoptions(precision=2, linewidth=200)
         return f"Markov Chain(\n\tstates={self.states},\n\ttransitions={np.array2string(self.transitions).replace('\n', ',')},\n\tinitial_state={self.initial_state}\n)"
 
     def nsteps(self, n: int) -> Matrix[Literal["N"], Float]:
