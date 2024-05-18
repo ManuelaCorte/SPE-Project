@@ -1,7 +1,10 @@
+from pprint import pformat
 from typing import Literal
-from graphviz import Digraph
-from src.utils import Float, Matrix
+
 import numpy as np
+from graphviz import Digraph
+
+from src.utils import Float, Matrix
 
 
 class MarkovChain:
@@ -27,7 +30,16 @@ class MarkovChain:
 
     def __str__(self) -> str:
         np.set_printoptions(precision=2, linewidth=200)
-        return f"Markov Chain(\n\tstates={self.states},\n\ttransitions={np.array2string(self.transitions).replace('\n', ',')},\n\tinitial_state={self.initial_state}\n)"
+        return "MarkovChain: " + pformat(
+            {
+                "states": self.states,
+                "transitions": self.transitions,
+                "initial_state": self.initial_state,
+            },
+            indent=2,
+            compact=False,
+            sort_dicts=False,
+        )
 
     def nsteps(self, n: int) -> Matrix[Literal["N"], Float]:
         """
@@ -59,7 +71,9 @@ class MarkovChain:
 
         graph.render(f"data/results/{filename}")
 
-    def to_image_with_known_var(self, filename: str, known_var_markov_chain: 'MarkovChain'):
+    def to_image_with_known_var(
+        self, filename: str, known_var_markov_chain: "MarkovChain"
+    ):
         """
         Creates a graph image of the Markov Chain, with a linked known variable Markov Chain.
 
@@ -78,10 +92,12 @@ class MarkovChain:
 
         n_hidden_states = len(self.states)
         for i, state in enumerate(known_var_markov_chain.states):
-            graph.node(str(i+n_hidden_states), label=f"K{i}-{state:.2f}")
+            graph.node(str(i + n_hidden_states), label=f"K{i}-{state:.2f}")
 
         for i, row in enumerate(known_var_markov_chain.transitions):
             for j, transistion in enumerate(row):
-                graph.edge(str(i), str(j+n_hidden_states), label=f"k-{transistion:.2f}")
+                graph.edge(
+                    str(i), str(j + n_hidden_states), label=f"k-{transistion:.2f}"
+                )
 
         graph.render(f"data/results/{filename}")
