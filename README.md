@@ -12,7 +12,7 @@ cd SPE-Project
 The required dependencies can be installed using [Poetry](https://python-poetry.org/docs/). Once Poetry is installed, run the following command to install the dependencies:
 
 ```
-poetry install
+poetry install --no-root
 ```
 
 Alternatively, you can install the dependencies system-wise using pip (not recommended):
@@ -27,7 +27,20 @@ To run any file, you can either use the `poetry run` command or activate the vir
 
 ### Data generation
 
-The raw datasets are saved in the `data/raw` directory. To generate the datasets, run the following command:
+The raw datasets can be retrieved by running the following command
+
+```
+git lfs pull
+```
+
+and wiil be saved in the `data/raw` directory. 
+
+If you don't have Git LFS installed, you can download the raw datasets from [this link](https://drive.google.com/drive/folders/1ClauAPLzxeDO2zt1UJ6nhdN8vMoptdKP?usp=sharing) and save them in the `data/raw` directory. Using this method, if _git_ asks you to commit the changes, you can ignore them using this command
+```
+git update-index --assume-unchanged data/cleaned/* data/raw/*
+```
+
+To then generate the final dataset, run the following command:
 
 ```
 poetry run python -m src.data_generation
