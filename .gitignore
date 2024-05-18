@@ -171,6 +171,7 @@ cython_debug/
 !data/cleaned/*.csv
 
 # Results plots
+results/
 *.png
 *.jpeg
 *.jpg

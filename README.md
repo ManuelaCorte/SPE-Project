@@ -35,6 +35,22 @@ poetry run python -m src.data_generation
 
 The final dataset will be saved in the `data/processed` directory, while the specific countries datasets will be saved in the `data/intermediate` directory.
 
+## Running the different models
+
+### Hidden Markov Model
+
+To run the Baum-Welch algorithm for the HMM model, run the following command:
+
+```
+poetry run python -m src.hmm --countries <list of countries separates by a space>
+```
+
+The list of available countries can be obtained by running the following command:
+
+```
+poetry run python -m src.hmm --help
+```
+
 ## Contributing
 
 In order to keep the project organized, pre-commit hooks are used. To install them, run the following command:
@@ -55,5 +71,5 @@ These hooks are also run by GitHub Actions on every push.
 Moreover, the project is fully typed using [Pyright](https://microsoft.github.io/pyright/#/). Pyright configurations are specified inside the `pyproject.toml` file. To check the correctness of type hints, run the following command:
 
 ```
-poetry run pyright
+poetry run pyright src/
 ```

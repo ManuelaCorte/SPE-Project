@@ -30,7 +30,7 @@ class MarkovChain:
 
     def __str__(self) -> str:
         np.set_printoptions(precision=2, linewidth=200)
-        return "MarkovChain: " + pformat(
+        return pformat(
             {
                 "states": self.states,
                 "transitions": self.transitions,
@@ -62,8 +62,13 @@ class MarkovChain:
         graph = Digraph("Markov Chain", filename=filename, format="png")
         graph.attr(rankdir="LR", size="8,5")
 
-        for i, state in enumerate(self.states):
-            graph.node(str(i), label=f"{state:.2f}")
+        if self.states.size == 1:
+            state_prob = self.states.item()
+            graph.node("0", label=f"{state_prob:.2f}")
+            graph.node("1", label=f"{1 - state_prob:.2f}")
+        else:
+            for i, state in enumerate(self.states):
+                graph.node(str(i), label=f"{state:.2f}")
 
         for i, row in enumerate(self.transitions):
             for j, transistion in enumerate(row):
@@ -79,18 +84,24 @@ class MarkovChain:
 
         Parameters:
             filename: The name of the file to save the image to.
+            known_var_markov_chain: The known variable Markov Chain to link to.
         """
         graph = Digraph("Markov Chain", filename=filename, format="png")
         graph.attr(rankdir="LR", size="8,5")
 
-        for i, state in enumerate(self.states):
-            graph.node(str(i), label=f"H{i}-{state:.2f}")
+        if self.states.size == 1:
+            state_prob = self.states.item()
+            graph.node("0", label=f"{state_prob:.2f}")
+            graph.node("1", label=f"{1 - state_prob:.2f}")
+        else:
+            for i, state in enumerate(self.states):
+                graph.node(str(i), label=f"H{i}-{state:.2f}")
 
         for i, row in enumerate(self.transitions):
             for j, transistion in enumerate(row):
                 graph.edge(str(i), str(j), label=f"h-{transistion:.2f}")
 
-        n_hidden_states = len(self.states)
+        n_hidden_states = self.states.size if self.states.size > 1 else 2
         for i, state in enumerate(known_var_markov_chain.states):
             graph.node(str(i + n_hidden_states), label=f"K{i}-{state:.2f}")
 

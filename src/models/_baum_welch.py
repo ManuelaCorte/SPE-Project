@@ -1,14 +1,11 @@
-import os
 from copy import deepcopy
 from enum import Enum
 from typing import Literal
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
-from src.data import clean_dataset, serialize_country_data
-from src.structs import Country, Indicator, MarkovChain
+from src.structs import Indicator, MarkovChain
 from src.utils import Float, Matrix
 
 GDP, IR, CPI = Indicator
@@ -60,42 +57,52 @@ class KnownVariables(Enum):
 def baum_welch(
     hidden_markov_chain: MarkovChain,
     known_var_markov_chain: MarkovChain,
-    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
+    country_data: dict[Indicator, Matrix[Literal["N"], Float]],
     epochs: int = 1,
 ) -> tuple[MarkovChain, MarkovChain]:
+    """
+    Baum-Welch algorithm for Hidden Markov Models.
+
+    Parameters:
+        hidden_markov_chain: The hidden markov chain.
+        known_var_markov_chain: The known variables markov chain.
+        country_data: The country data.
+        epochs: The number of epochs to train the model.
+
+    Returns:
+        The trained hidden markov chain and known variables markov chain.
+    """
     for _ in tqdm(range(epochs), desc="training", unit="epoch"):
         A = deepcopy(hidden_markov_chain.transitions)
         B = deepcopy(known_var_markov_chain.transitions)
         pi = deepcopy(hidden_markov_chain.states)
         n = len(hidden_markov_chain.states)
 
-        for country in countries_data:
-            country_data = countries_data[country]
-            Y = [KnownVariables.get_variable(gdp).value for gdp in country_data[GDP]]
-            T = len(Y)
+        Y = [KnownVariables.get_variable(gdp).value for gdp in country_data[GDP]]
+        T = len(Y)
 
-            alpha = _forward(pi, A, B, Y)
-            beta = _backward(A, B, Y)
+        alpha = _forward(pi, A, B, Y)
+        beta = _backward(A, B, Y)
 
-            gamma, xi = _compute_temporary_variables(alpha, beta, A, B, Y)
+        gamma, xi = _compute_temporary_variables(alpha, beta, A, B, Y)
 
-            pi: Matrix[Literal["N"], Float] = np.sum([gamma[i][0] for i in range(n)])
+        pi: Matrix[Literal["N"], Float] = np.sum([gamma[i][0] for i in range(n)])
 
-            for i in range(n):
-                for j in range(n):
-                    A[i][j] = np.sum([xi[i][j][t] for t in range(T - 1)]) / np.sum(
-                        [gamma[i][t] for t in range(T - 1)]
-                    )
+        for i in range(n):
+            for j in range(n):
+                A[i][j] = np.sum([xi[i][j][t] for t in range(T - 1)]) / np.sum(
+                    [gamma[i][t] for t in range(T - 1)]
+                )
 
-            for i in range(n):
-                for j in range(len(KnownVariables.get_all_variables())):
-                    B[i][j] = np.sum(
-                        [
-                            gamma[i][t]
-                            for t in range(T)
-                            if KnownVariables.get_variable(Y[t]).value == j
-                        ]
-                    ) / np.sum([gamma[i][t] for t in range(T)])
+        for i in range(n):
+            for j in range(len(KnownVariables.get_all_variables())):
+                B[i][j] = np.sum(
+                    [
+                        gamma[i][t]
+                        for t in range(T)
+                        if KnownVariables.get_variable(Y[t]).value == j
+                    ]
+                ) / np.sum([gamma[i][t] for t in range(T)])
 
         hidden_markov_chain.transitions = A
         known_var_markov_chain.transitions = B
@@ -323,52 +330,3 @@ def _compute_temporary_variables(
                 xi[i][j][t] = numerator / denominator
 
     return gamma, xi
-
-
-if __name__ == "__main__":
-    if os.path.exists("data/cleaned/dataset.csv"):
-        df = pd.read_csv("data/cleaned/dataset.csv")
-    else:
-        df = clean_dataset(save_intermediate=True)
-
-    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
-
-    # countries = Country
-    countries = [Country.ITALY]
-    for country in countries:
-        countries_data[country] = serialize_country_data(df, country)
-        countries_data[country] = prepate_input_for_hmm(countries_data[country])
-    # print(countries_data[Country.ITALY])
-
-    starting_country_data = countries_data[Country.ITALY]
-    hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(
-        starting_country_data
-    )
-    print(hidden_markov_chain)
-    print(f"hidden states sum: {np.sum(hidden_markov_chain.states):.2f}")
-    for i in range(4):
-        print(
-            f"hidden transitions {i}: {np.sum(hidden_markov_chain.transitions[i]):.2f}"
-        )
-    print(known_var_markov_chain)
-    for i in range(4):
-        print(
-            f"known transitions {i}: {np.sum(known_var_markov_chain.transitions[i]):.2f}"
-        )
-    hidden_markov_chain.to_image_with_known_var(
-        "hidden_markov_chain_2", known_var_markov_chain
-    )
-
-    # * Baum-Welch algorithm
-    hidden_mc, known_mc = baum_welch(
-        hidden_markov_chain, known_var_markov_chain, countries_data
-    )
-
-    print(hidden_mc)
-    print(f"hidden states sum: {np.sum(hidden_mc.states):.2f}")
-    for i in range(4):
-        print(f"hidden transitions {i}: {np.sum(hidden_mc.transitions[i]):.2f}")
-    print(known_mc)
-    for i in range(4):
-        print(f"known transitions {i}: {np.sum(known_mc.transitions[i]):.2f}")
-    # hidden_markov_chain.to_image_with_known_var("hidden_markov_chain_2", known_var_markov_chain)
