@@ -10,52 +10,66 @@ from src.models import (
     construct_starting_markov_chain,
     prepate_input_for_hmm,
 )
-from src.structs import Country, Indicator, MarkovChain
-from src.utils import Float, Matrix
-
-
-def _run_baum_welch(country: Country) -> tuple[MarkovChain, MarkovChain]:
-    if os.path.exists("data/cleaned/dataset.csv"):
-        df = pd.read_csv("data/cleaned/dataset.csv")
-    else:
-        df = clean_dataset(save_intermediate=True)
-
-    country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
-
-    country_data = serialize_country_data(df, country)
-    country_data = prepate_input_for_hmm(country_data)
-
-    hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(
-        country_data
-    )
-    return baum_welch(hidden_markov_chain, known_var_markov_chain, country_data)
-
+from src.structs import Country, Indicator
+from src.utils import Float, Matrix    
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(add_help=False)
     arg_parser.add_argument(
-        "--countries",
-        required=True,
-        nargs="+",
+        "--epochs",
+        "-e",
+        help="Epochs for training. For more information use --help",
+    )
+    arg_parser.add_argument(
+        "--country",
+        "-c",
         help="The countries to run the Baum-Welch algorithm on. For more information use --help",
     )
     arg_parser.add_argument(
         "--help",
         "-h",
         action="help",
-        help=f"Run the Baum-Welch algorithm on the chosen countries. The countries can be chosen from the following list: {', '.join([country.name for country in Country])}",
+        help=f"Run the Baum-Welch algorithm. The starting country can be chosen from the following list (DEFAULT: ITALY): {', '.join([country.name for country in Country])}",
     )
     args = arg_parser.parse_args()
 
-    countries = [Country[country.upper()] for country in args.countries]
+    epochs = int(args.epochs) if args.epochs and args.epochs.isdigit() else 25
+    starting_country = Country[args.country.upper()] if args.country and args.country.upper() in [country.name for country in Country] else Country.ITALY
+    print(f"Starting country: {starting_country.name}")
+    print(f"Epochs: {epochs}")
+
+    countries = Country
+    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     for country in countries:
-        print(f"Running Baum-Welch algorithm for {country.name}...")
-        hidden_mc, known_mc = _run_baum_welch(country)
+        if os.path.exists("data/cleaned/dataset.csv"):
+            df = pd.read_csv("data/cleaned/dataset.csv")
+        else:
+            df = clean_dataset(save_intermediate=True)
 
-        print("Hidden Markov Chain")
-        print(hidden_mc)
-        print()
-        print("Known Variable Markov Chain")
-        print(known_mc)
+        country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
 
-        print("\n--------------------------------------------------\n")
+        country_data = serialize_country_data(df, country)
+        country_data = prepate_input_for_hmm(country_data)
+        countries_data[country] = country_data
+
+    hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(
+        countries_data[starting_country]
+    )
+
+    print("\n--------------------------------------------------\n")
+    print("Hidden Markov Chain")
+    print(hidden_markov_chain)
+    print()
+    print("Known Variable Markov Chain")
+    print(known_var_markov_chain)
+    print("\n--------------------------------------------------\n")
+
+    hidden_mc, known_mc =  baum_welch(hidden_markov_chain, known_var_markov_chain, countries_data, epochs)
+    
+    print("\n--------------------------------------------------\n")
+    print("Hidden Markov Chain")
+    print(hidden_markov_chain)
+    print()
+    print("Known Variable Markov Chain")
+    print(known_var_markov_chain)
+    print("\n--------------------------------------------------\n")

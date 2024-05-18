@@ -3,9 +3,10 @@ from enum import Enum
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 from tqdm import tqdm
 
-from src.structs import Indicator, MarkovChain
+from src.structs import Country, Indicator, MarkovChain
 from src.utils import Float, Matrix
 
 GDP, IR, CPI = Indicator
@@ -57,7 +58,7 @@ class KnownVariables(Enum):
 def baum_welch(
     hidden_markov_chain: MarkovChain,
     known_var_markov_chain: MarkovChain,
-    country_data: dict[Indicator, Matrix[Literal["N"], Float]],
+    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
     epochs: int = 1,
 ) -> tuple[MarkovChain, MarkovChain]:
     """
@@ -72,37 +73,52 @@ def baum_welch(
     Returns:
         The trained hidden markov chain and known variables markov chain.
     """
+    countries = Country
     for _ in tqdm(range(epochs), desc="training", unit="epoch"):
         A = deepcopy(hidden_markov_chain.transitions)
         B = deepcopy(known_var_markov_chain.transitions)
         pi = deepcopy(hidden_markov_chain.states)
-        n = len(hidden_markov_chain.states)
+        n = len(hidden_markov_chain.states) 
 
-        Y = [KnownVariables.get_variable(gdp).value for gdp in country_data[GDP]]
-        T = len(Y)
+        gammas: list[npt.NDArray[np.generic]] = []
+        xis: list[npt.NDArray[np.generic]] = []
+        Ys: list[list[int]] = []
+        Ts: list[int] = []
+        R = len(countries)
 
-        alpha = _forward(pi, A, B, Y)
-        beta = _backward(A, B, Y)
+        for country in countries:
+            country_data = countries_data[country]
+            Y = [KnownVariables.get_variable(gdp).value for gdp in country_data[GDP]]
+            T = len(Y)
+            Ys.append(Y)
+            Ts.append(T)
 
-        gamma, xi = _compute_temporary_variables(alpha, beta, A, B, Y)
+            alpha = _forward(pi, A, B, Y)
+            beta = _backward(A, B, Y)
 
-        pi: Matrix[Literal["N"], Float] = np.sum([gamma[i][0] for i in range(n)])
+            gamma, xi = _compute_temporary_variables(alpha, beta, A, B, Y)
+            gammas.append(gamma)
+            xis.append(xi)
+
+        for i in range(n):
+            pi[i] = np.sum([gammas[r][i][0] for r in range(R)]) / R
 
         for i in range(n):
             for j in range(n):
-                A[i][j] = np.sum([xi[i][j][t] for t in range(T - 1)]) / np.sum(
-                    [gamma[i][t] for t in range(T - 1)]
+                A[i][j] = np.sum([xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)]) / np.sum(
+                    [gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)]
                 )
 
         for i in range(n):
             for j in range(len(KnownVariables.get_all_variables())):
                 B[i][j] = np.sum(
                     [
-                        gamma[i][t]
-                        for t in range(T)
-                        if KnownVariables.get_variable(Y[t]).value == j
+                        gammas[r][i][t]
+                        for r in range(R)
+                        for t in range(Ts[r])
+                        if KnownVariables.get_variable(Ys[r][t]).value == j
                     ]
-                ) / np.sum([gamma[i][t] for t in range(T)])
+                ) / np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
 
         hidden_markov_chain.transitions = A
         known_var_markov_chain.transitions = B
@@ -305,7 +321,7 @@ def _compute_temporary_variables(
         )
         for i in range(num_hidden_states):
             numerator = alpha[i][t] * beta[i][t]
-            gamma[i][t] = numerator / denominator
+            gamma[i][t] = numerator / denominator if denominator != 0 else 0
 
     xi = np.zeros((num_hidden_states, num_hidden_states, num_observations - 1))
     for t in range(num_observations - 1):
@@ -327,6 +343,6 @@ def _compute_temporary_variables(
                     * beta[j][t + 1]
                     * emission_matrix[j][observations[t + 1]]
                 )
-                xi[i][j][t] = numerator / denominator
+                xi[i][j][t] = numerator / denominator if denominator != 0 else 0
 
     return gamma, xi
