@@ -11,7 +11,7 @@ from src.models import (
     prepate_input_for_hmm,
 )
 from src.structs import Country, Indicator
-from src.utils import Float, Matrix    
+from src.utils import Float, Matrix
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(add_help=False)
@@ -34,7 +34,12 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     epochs = int(args.epochs) if args.epochs and args.epochs.isdigit() else 25
-    starting_country = Country[args.country.upper()] if args.country and args.country.upper() in [country.name for country in Country] else Country.ITALY
+    starting_country = (
+        Country[args.country.upper()]
+        if args.country
+        and args.country.upper() in [country.name for country in Country]
+        else Country.ITALY
+    )
     print(f"Starting country: {starting_country.name}")
     print(f"Epochs: {epochs}")
 
@@ -64,8 +69,10 @@ if __name__ == "__main__":
     print(known_var_markov_chain)
     print("\n--------------------------------------------------\n")
 
-    hidden_mc, known_mc =  baum_welch(hidden_markov_chain, known_var_markov_chain, countries_data, epochs)
-    
+    hidden_mc, known_mc = baum_welch(
+        hidden_markov_chain, known_var_markov_chain, countries_data, epochs
+    )
+
     print("\n--------------------------------------------------\n")
     print("Hidden Markov Chain")
     print(hidden_markov_chain)

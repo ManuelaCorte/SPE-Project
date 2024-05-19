@@ -78,10 +78,10 @@ def baum_welch(
         A = deepcopy(hidden_markov_chain.transitions)
         B = deepcopy(known_var_markov_chain.transitions)
         pi = deepcopy(hidden_markov_chain.states)
-        n = len(hidden_markov_chain.states) 
+        n = len(hidden_markov_chain.states)
 
-        gammas: list[npt.NDArray[np.generic]] = []
-        xis: list[npt.NDArray[np.generic]] = []
+        gammas: list[npt.NDArray[np.float64]] = []
+        xis: list[npt.NDArray[np.float64]] = []
         Ys: list[list[int]] = []
         Ts: list[int] = []
         R = len(countries)
@@ -105,7 +105,9 @@ def baum_welch(
 
         for i in range(n):
             for j in range(n):
-                A[i][j] = np.sum([xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)]) / np.sum(
+                A[i][j] = np.sum(
+                    [xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)]
+                ) / np.sum(
                     [gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)]
                 )
 

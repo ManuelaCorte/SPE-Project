@@ -33,7 +33,7 @@ The raw datasets can be retrieved by running the following command
 git lfs pull
 ```
 
-and wiil be saved in the `data/raw` directory. 
+and wiil be saved in the `data/raw` directory.
 
 If you don't have Git LFS installed, you can download the raw datasets from [this link](https://drive.google.com/drive/folders/1ClauAPLzxeDO2zt1UJ6nhdN8vMoptdKP?usp=sharing) and save them in the `data/raw` directory. Using this method, if _git_ asks you to commit the changes, you can ignore them using this command
 ```
