@@ -33,7 +33,7 @@ The raw datasets can be retrieved by running the following command
 git lfs pull
 ```
 
-and wiil be saved in the `data/raw` directory. 
+and wiil be saved in the `data/raw` directory.
 
 If you don't have Git LFS installed, you can download the raw datasets from [this link](https://drive.google.com/drive/folders/1ClauAPLzxeDO2zt1UJ6nhdN8vMoptdKP?usp=sharing) and save them in the `data/raw` directory. Using this method, if _git_ asks you to commit the changes, you can ignore them using this command
 ```
@@ -47,6 +47,22 @@ poetry run python -m src.data_generation
 ```
 
 The final dataset will be saved in the `data/processed` directory, while the specific countries datasets will be saved in the `data/intermediate` directory.
+
+## Running the different models
+
+### Hidden Markov Model
+
+To run the Baum-Welch algorithm for the HMM model, run the following command:
+
+```
+poetry run python -m src.hmm --countries <list of countries separates by a space>
+```
+
+The list of available countries can be obtained by running the following command:
+
+```
+poetry run python -m src.hmm --help
+```
 
 ## Contributing
 
@@ -68,5 +84,5 @@ These hooks are also run by GitHub Actions on every push.
 Moreover, the project is fully typed using [Pyright](https://microsoft.github.io/pyright/#/). Pyright configurations are specified inside the `pyproject.toml` file. To check the correctness of type hints, run the following command:
 
 ```
-poetry run pyright
+poetry run pyright src/
 ```

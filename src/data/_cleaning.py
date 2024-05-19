@@ -48,8 +48,8 @@ def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataF
 
     countries: list[DataFrame] = []
     for country in Country:
-        if country == Country.G20:
-            continue
+        # if country == Country.G20:
+        #     continue
         print("Processing", country.name.capitalize())
         gdp_interest = _get_monthly_data(df, country)
         gdp_interest = _convert_to_percentage(gdp_interest)
