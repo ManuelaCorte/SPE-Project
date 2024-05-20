@@ -87,32 +87,37 @@ class MarkovChain:
             known_var_markov_chain: The known variable Markov Chain to link to.
         """
         graph = Digraph("Markov Chain", filename=filename, format="png")
-        graph.attr(rankdir="LR", size="8,5")
+        graph.attr(rankdir="LR", size="50")
 
-        if self.states.size == 1:
-            state_prob = self.states.item()
-            graph.node("0", label=f"{state_prob:.2f}")
-            graph.node("1", label=f"{1 - state_prob:.2f}")
-        else:
-            for i, state in enumerate(self.states):
-                graph.node(str(i), label=f"H{i}-{state:.2f}")
+        with graph.subgraph(name='hidden_graph') as c:
+            c.attr(rank='same', color='invis')
+            if self.states.size == 1:
+                state_prob = self.states.item()
+                c.node("0", label=f"{state_prob:.2f}")
+                c.node("1", label=f"{1 - state_prob:.2f}")
+            else:
+                for i, state in enumerate(self.states):
+                    c.node(str(i), label=f"H{i}-{state:.2f}")
 
-        for i, row in enumerate(self.transitions):
-            for j, transistion in enumerate(row):
-                if transistion < 0.0001:
-                    continue
-                graph.edge(str(i), str(j), label=f"h-{transistion:.2f}")
+            for i, row in enumerate(self.transitions):
+                for j, transistion in enumerate(row):
+                    if transistion < 0.0001:
+                        continue
+                    c.edge(str(i), str(j), label=f"h-{transistion:.2f}")
 
         n_hidden_states = self.states.size if self.states.size > 1 else 2
-        for i, state in enumerate(known_var_markov_chain.states):
-            graph.node(str(i + n_hidden_states), label=f"K{i}-{state:.2f}")
 
-        for i, row in enumerate(known_var_markov_chain.transitions):
-            for j, transistion in enumerate(row):
-                if transistion < 0.0001:
-                    continue
-                graph.edge(
-                    str(i), str(j + n_hidden_states), label=f"k-{transistion:.2f}", color="red"
-                )
+        with graph.subgraph(name='known_var') as c:
+            c.attr(rank='same', color='invis')
+            for i, state in enumerate(known_var_markov_chain.states):
+                c.node(str(i + n_hidden_states), label=f"K{i}-{state:.2f}")
+
+            for i, row in enumerate(known_var_markov_chain.transitions):
+                for j, transistion in enumerate(row):
+                    if transistion < 0.0001:
+                        continue
+                    c.edge(
+                        str(i), str(j + n_hidden_states), label=f"k-{transistion:.2f}", color="red"
+                    )
 
         graph.render(f"data/results/{filename}")
