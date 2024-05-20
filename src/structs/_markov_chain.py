@@ -30,7 +30,7 @@ class MarkovChain:
         self.initial_state = initial_state
 
     def __str__(self) -> str:
-        np.set_printoptions(precision=2, linewidth=200)
+        np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
         return pformat(
             {
                 "states": self.states,
