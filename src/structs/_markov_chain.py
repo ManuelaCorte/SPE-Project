@@ -89,7 +89,7 @@ class MarkovChain:
         graph = Digraph("Markov Chain", filename=filename, format="png")
         graph.attr(rankdir="LR", size="50")
 
-        with graph.subgraph(name='hidden_graph') as c:
+        with graph.subgraph(name='hidden_graph') as c: # type: ignore
             c.attr(rank='same', color='invis')
             if self.states.size == 1:
                 state_prob = self.states.item()
@@ -107,7 +107,7 @@ class MarkovChain:
 
         n_hidden_states = self.states.size if self.states.size > 1 else 2
 
-        with graph.subgraph(name='known_var') as c:
+        with graph.subgraph(name='known_var') as c: # type: ignore
             c.attr(rank='same', color='invis')
             for i, state in enumerate(known_var_markov_chain.states):
                 c.node(str(i + n_hidden_states), label=f"K{i}-{state:.2f}")
