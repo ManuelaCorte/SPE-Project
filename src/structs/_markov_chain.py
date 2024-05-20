@@ -99,6 +99,8 @@ class MarkovChain:
 
         for i, row in enumerate(self.transitions):
             for j, transistion in enumerate(row):
+                if transistion < 0.0001:
+                    continue
                 graph.edge(str(i), str(j), label=f"h-{transistion:.2f}")
 
         n_hidden_states = self.states.size if self.states.size > 1 else 2
@@ -107,8 +109,10 @@ class MarkovChain:
 
         for i, row in enumerate(known_var_markov_chain.transitions):
             for j, transistion in enumerate(row):
+                if transistion < 0.0001:
+                    continue
                 graph.edge(
-                    str(i), str(j + n_hidden_states), label=f"k-{transistion:.2f}"
+                    str(i), str(j + n_hidden_states), label=f"k-{transistion:.2f}", color="red"
                 )
 
         graph.render(f"data/results/{filename}")

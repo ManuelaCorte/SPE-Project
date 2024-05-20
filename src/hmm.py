@@ -80,3 +80,5 @@ if __name__ == "__main__":
     print("Known Variable Markov Chain")
     print(known_var_markov_chain)
     print("\n--------------------------------------------------\n")
+
+    hidden_markov_chain.to_image_with_known_var('hmm', known_var_markov_chain)
