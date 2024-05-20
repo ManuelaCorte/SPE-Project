@@ -5,6 +5,7 @@ import numpy as np
 from graphviz import Digraph
 
 from src.utils import Float, Matrix
+from src.structs import HiddenState, KnownVariables
 
 
 class MarkovChain:
@@ -90,14 +91,14 @@ class MarkovChain:
         graph.attr(rankdir="LR", size="50")
 
         with graph.subgraph(name='hidden_graph') as c: # type: ignore
-            c.attr(rank='same', color='invis')
+            c.attr(color='invis')
             if self.states.size == 1:
                 state_prob = self.states.item()
                 c.node("0", label=f"{state_prob:.2f}")
                 c.node("1", label=f"{1 - state_prob:.2f}")
             else:
                 for i, state in enumerate(self.states):
-                    c.node(str(i), label=f"H{i}-{state:.2f}")
+                    c.node(str(i), label=f"{HiddenState(i).name} - {state:.2f}")
 
             for i, row in enumerate(self.transitions):
                 for j, transistion in enumerate(row):
@@ -108,9 +109,9 @@ class MarkovChain:
         n_hidden_states = self.states.size if self.states.size > 1 else 2
 
         with graph.subgraph(name='known_var') as c: # type: ignore
-            c.attr(rank='same', color='invis')
+            c.attr(color='invis')
             for i, state in enumerate(known_var_markov_chain.states):
-                c.node(str(i + n_hidden_states), label=f"K{i}-{state:.2f}")
+                c.node(str(i + n_hidden_states), label=f"{KnownVariables(i).name} - {state:.2f}") 
 
             for i, row in enumerate(known_var_markov_chain.transitions):
                 for j, transistion in enumerate(row):
