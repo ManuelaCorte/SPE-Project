@@ -60,3 +60,45 @@ class TimePeriod(StrEnum):
     YEAR = "year"
     QUARTER = "quarter"
     MONTH = "month"
+
+class HiddenState(Enum):
+    """
+    The hidden state of the markov chain. Each state tells if the Interest Rate and the CPI are increasing or decreasing
+    """
+
+    I_IR_I_CPI = 0
+    I_IR_D_CPI = 1
+    D_IR_I_CPI = 2
+    D_IR_D_CPI = 3
+
+    @staticmethod
+    def get_all_states() -> list[int]:
+        return [state.value for state in HiddenState]
+
+    @staticmethod
+    def get_state(ir: float, cpi: float):
+        if ir > 0 and cpi > 0:
+            return HiddenState.I_IR_I_CPI
+        elif ir > 0 and cpi < 0:
+            return HiddenState.I_IR_D_CPI
+        elif ir < 0 and cpi > 0:
+            return HiddenState.D_IR_I_CPI
+        else:
+            return HiddenState.D_IR_D_CPI
+
+
+class KnownVariables(Enum):
+    """
+    The known variables of the markov chain. Each state tells if the GDP is increasing or decreasing
+    """
+
+    I_GDP = 0
+    D_GDP = 1
+
+    @staticmethod
+    def get_all_variables() -> list[int]:
+        return [var.value for var in KnownVariables]
+
+    @staticmethod
+    def get_variable(gdp: float):
+        return KnownVariables.I_GDP if gdp > 0 else KnownVariables.D_GDP
