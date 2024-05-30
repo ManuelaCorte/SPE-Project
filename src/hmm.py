@@ -14,14 +14,7 @@ from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 if __name__ == "__main__":
-    print("Hidden Markov Chain States:\n" + 
-          "\t0: increase Interest Rate, increase Consumer Price Index\n" + 
-          "\t1: increase Interest Rate, decrease Consumer Price Index\n" + 
-          "\t2: decrease Interest Rate, increase Consumer Price Index\n" + 
-          "\t3: decrease Interest Rate, decrease Consumer Price Index\n")
-    print("Known Variable Markov Chain States:\n" + 
-          "\t0: increase Gross Domestic Product\n" + 
-          "\t1: decrease Gross Domestic Product\n")
+    default_country = Country.UNITED_STATES
     
     arg_parser = argparse.ArgumentParser(add_help=False)
     arg_parser.add_argument(
@@ -38,16 +31,25 @@ if __name__ == "__main__":
         "--help",
         "-h",
         action="help",
-        help=f"Run the Baum-Welch algorithm. The starting country can be chosen from the following list (DEFAULT: ITALY): {', '.join([country.name for country in Country])}",
+        help=f"Run the Baum-Welch algorithm. The starting country can be chosen from the following list (DEFAULT: {default_country.name}): {', '.join([country.name for country in Country])}",
     )
     args = arg_parser.parse_args()
+
+    print("Hidden Markov Chain States:\n" + 
+          "\t0: increase Interest Rate, increase Consumer Price Index\n" + 
+          "\t1: increase Interest Rate, decrease Consumer Price Index\n" + 
+          "\t2: decrease Interest Rate, increase Consumer Price Index\n" + 
+          "\t3: decrease Interest Rate, decrease Consumer Price Index\n")
+    print("Known Variable Markov Chain States:\n" + 
+          "\t0: increase Gross Domestic Product\n" + 
+          "\t1: decrease Gross Domestic Product\n")
 
     epochs = int(args.epochs) if args.epochs and args.epochs.isdigit() else 25
     starting_country = (
         Country[args.country.upper()]
         if args.country
         and args.country.upper() in [country.name for country in Country]
-        else Country.ITALY
+        else default_country
     )
     print(f"Starting country: {starting_country.name}")
     print(f"Epochs: {epochs}")
