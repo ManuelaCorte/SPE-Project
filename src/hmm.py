@@ -14,6 +14,15 @@ from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 if __name__ == "__main__":
+    print("Hidden Markov Chain States:\n" + 
+          "\t0: increase Interest Rate, increase Consumer Price Index\n" + 
+          "\t1: increase Interest Rate, decrease Consumer Price Index\n" + 
+          "\t2: decrease Interest Rate, increase Consumer Price Index\n" + 
+          "\t3: decrease Interest Rate, decrease Consumer Price Index\n")
+    print("Known Variable Markov Chain States:\n" + 
+          "\t0: increase Gross Domestic Product\n" + 
+          "\t1: decrease Gross Domestic Product\n")
+    
     arg_parser = argparse.ArgumentParser(add_help=False)
     arg_parser.add_argument(
         "--epochs",
@@ -81,4 +90,6 @@ if __name__ == "__main__":
     print(known_var_markov_chain)
     print("\n--------------------------------------------------\n")
 
-    hidden_markov_chain.to_image_with_known_var('hmm', known_var_markov_chain)
+    filename = "hmm"
+    hidden_markov_chain.to_image_with_known_var(filename, known_var_markov_chain)
+    print(f"Graph saved to data/results/{filename}.png")
