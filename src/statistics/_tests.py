@@ -10,12 +10,12 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import durbin_watson
 from statsmodels.tsa.stattools import adfuller, kpss
 
-from src.structs import PlotOptions, SignificanceResult, StationarityTest
-from src.utils import Float, Matrix
+from src.structs import SignificanceResult, StationarityTest
+from src.utils import Float, Matrix, PlotOptions
 
 
 def correlation(
-    variables: list[Matrix[Literal["N"], Float]],
+    variables: list[Matrix[Literal["2 N"], Float]],
     plot_args: Optional[PlotOptions] = None,
 ) -> dict[str, Matrix[Literal["N N"], Float]]:
     """

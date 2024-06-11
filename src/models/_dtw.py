@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sbn
 
-from src.structs import PlotOptions
-from src.utils import Float, Matrix, remove_nans
+from src.utils import Float, Matrix, PlotOptions, remove_nans
 
 
 class DynamicTimeWarping:

@@ -52,10 +52,13 @@ def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataF
         #     continue
         print("Processing", country.name.capitalize())
         gdp_interest = _get_monthly_data(df, country)
-        gdp_interest = _convert_to_percentage(gdp_interest)
         inflation = _clean_inflation_dataset(country)
         data = pd.concat([gdp_interest, inflation], ignore_index=True)
-        data["Date"] = data["Year"].astype(str) + "-" + data["Month"].astype(str)
+        data["Date"] = pd.to_datetime(
+            data["Year"].astype(str) + "-" + data["Month"].astype(str).str.zfill(2),
+            format="%Y-%m",
+        )
+        data = _convert_to_percentage(data)
         countries.append(data)
 
         if save_intermediate:
@@ -76,6 +79,7 @@ def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataF
             "Year",
             "Month",
             "Value",
+            "Value_pct",
         ]
     ]
 
@@ -200,6 +204,8 @@ def _get_different_time_granularities(
                 year, month = column[:4], column[4:]
                 if year.isnumeric() and month.startswith("M"):
                     time_periods_columns.append(column)
+        case _:
+            raise ValueError("Invalid time period")
 
     # Create a new dataframe with the columns corresponding to the given time period
     columns_to_remove = dataframe.columns.difference(
@@ -229,13 +235,17 @@ def _get_monthly_data(dataframe: DataFrame, country: Country) -> DataFrame:
     ]
     gdp_quarter = _reshape_dataframe(gdp_quarter)
 
-    # Interpolate the quarterly data to get monthly data
+    # Convert the date to yyyy-mm-dd format
     gdp_quarter["Date"] = pd.to_datetime(
-        gdp_quarter["Year"].astype(str) + "-" + gdp_quarter["Month"].astype(str)
+        gdp_quarter["Year"].astype(str)
+        + "-"
+        + gdp_quarter["Month"].astype(str).str.zfill(2),
+        format="%Y-%m",
     )
     gdp_quarter["Date"] = pd.to_datetime(gdp_quarter["Date"]).dt.to_period("M")
     gdp_quarter = gdp_quarter.set_index("Date")
 
+    # Interpolate the quarterly data to get monthly data
     gdp_month = gdp_quarter.resample("M").interpolate()
     gdp_month["Date"] = gdp_month.index
     gdp_month["Year"] = gdp_month["Date"].dt.year
@@ -339,6 +349,8 @@ def _rename_time_period_columns(
                 if year.isnumeric() and month.isnumeric():
                     old_columns_names.append(column)
                     new_columns_names.append(f"{year}M{int(month)}")
+        case _:
+            raise ValueError("Invalid time period")
 
     dataframe.rename(
         columns=dict(zip(old_columns_names, new_columns_names)), inplace=True
@@ -349,16 +361,21 @@ def _rename_time_period_columns(
 
 def _convert_to_percentage(df: DataFrame) -> DataFrame:
     """
-    Extract the GDP values from the dataset and add them to the dataframe.
-
-    Parameters:
-        df: The dataframe to extract the GDP values from.
+    Add columns to the dataframe containing the percentage change of the indicators values.
 
     Returns:
         The dataframe with the GDP values added.
     """
     gdp = df[df["Indicator Name"].str.contains(Indicator.GDP.value)].copy()
     ir = df[df["Indicator Name"].str.contains(Indicator.IR.value)].copy()
-    gdp["Value"] = df["Value"].pct_change() * 100
+    cpi = df[df["Indicator Name"].str.contains(Indicator.CPI.value)].copy()
+    gdp["Value_pct"] = df["Value"].pct_change()
+    ir["Value_pct"] = df["Value"].pct_change()
+    cpi["Value_pct"] = df["Value"].pct_change()
 
-    return pd.concat([gdp, ir], ignore_index=True)
+    # Remove the first row
+    gdp = gdp.iloc[1:]
+    ir = ir.iloc[1:]
+    cpi = cpi.iloc[1:]
+
+    return pd.concat([gdp, ir, cpi], ignore_index=True)

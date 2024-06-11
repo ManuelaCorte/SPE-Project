@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from typing import Literal
 
 import matplotlib.pyplot as plt
@@ -6,8 +7,20 @@ import numpy as np
 import seaborn as sbn
 import statsmodels.graphics.tsaplots as tsa
 
-from src.structs import PlotOptions
-from src.utils import Float, Matrix, remove_nans
+from ._misc import remove_nans
+from ._types import Float, Matrix
+
+
+@dataclass(frozen=True)
+class PlotOptions:
+    """Utility class to gather together the options for a plot."""
+
+    filename: str
+    title: str
+    x_axis: str
+    y_axis: str
+    labels: list[str]
+    save: bool
 
 
 def plot_time_series(
@@ -33,13 +46,18 @@ def plot_time_series(
         constant_values=np.NaN,
     )
 
+    _, ax = plt.subplots(1, 1, figsize=(20, 10))
     sbn.set_theme(style="darkgrid")
-    sbn.lineplot(x=x, y=y, label=args.labels[0])
-    sbn.lineplot(x=x, y=moving_average, label=args.labels[1])
-    plt.title(args.title)
-    plt.xlabel(args.x_axis)
-    plt.ylabel(args.y_axis)
-    plt.legend()
+    sbn.lineplot(x=x, y=y, label=args.labels[0], ax=ax)
+    sbn.lineplot(x=x, y=moving_average, label=args.labels[1], ax=ax)
+    ax.set_title(args.title)
+    ax.set_xlabel(args.x_axis)
+    ax.set_ylabel(args.y_axis)
+    # insert 1 tick per year
+    ax.set_xticks(range(0, len(x), 12))
+    # show only the year
+    ax.set_xticklabels([x[i][:4] for i in range(0, len(x), 12)], rotation=45)
+    ax.legend()
 
     if args.save:
         if not os.path.exists("data/results/plots"):

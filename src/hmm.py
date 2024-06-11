@@ -5,17 +5,13 @@ from typing import Literal
 import pandas as pd
 
 from src.data import clean_dataset, serialize_country_data
-from src.models import (
-    baum_welch,
-    construct_starting_markov_chain,
-    prepate_input_for_hmm,
-)
+from src.models import baum_welch, construct_starting_markov_chain
 from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 if __name__ == "__main__":
     default_country = Country.UNITED_STATES
-    
+
     arg_parser = argparse.ArgumentParser(add_help=False)
     arg_parser.add_argument(
         "--epochs",
@@ -35,14 +31,18 @@ if __name__ == "__main__":
     )
     args = arg_parser.parse_args()
 
-    print("Hidden Markov Chain States:\n" + 
-          "\t0: increase Interest Rate, increase Consumer Price Index\n" + 
-          "\t1: increase Interest Rate, decrease Consumer Price Index\n" + 
-          "\t2: decrease Interest Rate, increase Consumer Price Index\n" + 
-          "\t3: decrease Interest Rate, decrease Consumer Price Index\n")
-    print("Known Variable Markov Chain States:\n" + 
-          "\t0: increase Gross Domestic Product\n" + 
-          "\t1: decrease Gross Domestic Product\n")
+    print(
+        "Hidden Markov Chain States:\n"
+        + "\t0: increase Interest Rate, increase Consumer Price Index\n"
+        + "\t1: increase Interest Rate, decrease Consumer Price Index\n"
+        + "\t2: decrease Interest Rate, increase Consumer Price Index\n"
+        + "\t3: decrease Interest Rate, decrease Consumer Price Index\n"
+    )
+    print(
+        "Known Variable Markov Chain States:\n"
+        + "\t0: increase Gross Domestic Product\n"
+        + "\t1: decrease Gross Domestic Product\n"
+    )
 
     epochs = int(args.epochs) if args.epochs and args.epochs.isdigit() else 25
     starting_country = (
@@ -64,8 +64,8 @@ if __name__ == "__main__":
 
         country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
 
-        country_data = serialize_country_data(df, country)
-        country_data = prepate_input_for_hmm(country_data)
+        country_data, _ = serialize_country_data(df, country, pct=True)
+        # country_data = prepate_input_for_hmm(country_data)
         countries_data[country] = country_data
 
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(

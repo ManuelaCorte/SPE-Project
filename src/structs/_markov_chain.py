@@ -4,8 +4,8 @@ from typing import Literal
 import numpy as np
 from graphviz import Digraph
 
-from src.utils import Float, Matrix
 from src.structs import HiddenState, KnownVariables
+from src.utils import Float, Matrix
 
 
 class MarkovChain:
@@ -30,7 +30,7 @@ class MarkovChain:
         self.initial_state = initial_state
 
     def __str__(self) -> str:
-        np.set_printoptions(formatter={'float': '{: 0.2f}'.format})
+        np.set_printoptions(formatter={"float": "{: 0.2f}".format})
         return pformat(
             {
                 "states": self.states,
@@ -90,8 +90,8 @@ class MarkovChain:
         graph = Digraph("Markov Chain", filename=filename, format="png")
         graph.attr(rankdir="LR", size="50")
 
-        with graph.subgraph(name='hidden_graph') as c: # type: ignore
-            c.attr(color='invis')
+        with graph.subgraph(name="hidden_graph") as c:  # type: ignore
+            c.attr(color="invis")
             if self.states.size == 1:
                 state_prob = self.states.item()
                 c.node("0", label=f"{state_prob:.2f}")
@@ -109,16 +109,29 @@ class MarkovChain:
 
         n_hidden_states = self.states.size if self.states.size > 1 else 2
 
-        with graph.subgraph(name='known_var') as c: # type: ignore
-            c.attr(color='invis')
+        with graph.subgraph(name="known_var") as c:  # type: ignore
+            c.attr(color="invis")
             for i, state in enumerate(known_var_markov_chain.states):
-                c.node(str(i + n_hidden_states), label=f"{KnownVariables(i).name} - {state:.2f}") 
+                c.node(
+                    str(i + n_hidden_states),
+                    label=f"{KnownVariables(i).name} - {state:.2f}",
+                )
 
             for i, row in enumerate(known_var_markov_chain.transitions):
                 for j, transistion in enumerate(row):
                     if transistion < 0.001:
-                        c.edge(str(i), str(j + n_hidden_states), color="tomato", style="dotted")
+                        c.edge(
+                            str(i),
+                            str(j + n_hidden_states),
+                            color="tomato",
+                            style="dotted",
+                        )
                     else:
-                        c.edge(str(i), str(j + n_hidden_states), label=f"k-{transistion:.2f}", color="red")
+                        c.edge(
+                            str(i),
+                            str(j + n_hidden_states),
+                            label=f"k-{transistion:.2f}",
+                            color="red",
+                        )
 
         graph.render(f"data/results/{filename}")

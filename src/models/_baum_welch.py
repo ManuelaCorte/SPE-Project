@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from tqdm import tqdm
 
-from src.structs import Country, Indicator, MarkovChain, HiddenState, KnownVariables
+from src.structs import Country, HiddenState, Indicator, KnownVariables, MarkovChain
 from src.utils import Float, Matrix
 
 GDP, IR, CPI = Indicator

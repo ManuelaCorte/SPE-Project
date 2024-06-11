@@ -79,7 +79,8 @@ def differencing(
         raise ValueError("the time series must be a 1D array")
 
     if d == 0:
-        return ts
+        # remove NaNs
+        return ts[~np.isnan(ts)]
 
     return differencing(ts[1:] - ts[:-1], d - 1)
 

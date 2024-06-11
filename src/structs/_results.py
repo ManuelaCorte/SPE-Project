@@ -32,3 +32,8 @@ class StationarityTest:
             f"Number of lags: {self.lags}\n"
             f"Critical values: {pformat(self.crit, compact=True, sort_dicts=False)}"
         )
+
+
+@dataclass
+class RegressionResult:
+    pass

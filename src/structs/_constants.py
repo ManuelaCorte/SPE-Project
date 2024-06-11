@@ -61,6 +61,7 @@ class TimePeriod(StrEnum):
     QUARTER = "quarter"
     MONTH = "month"
 
+
 class HiddenState(Enum):
     """
     The hidden state of the markov chain. Each state tells if the Interest Rate and the CPI are increasing or decreasing

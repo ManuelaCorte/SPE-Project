@@ -56,7 +56,10 @@ def get_time_periods_colums(columns: Any | list[str]) -> list[str]:
 
 
 def convert_to_matrix(
-    df: pd.DataFrame, indicator: Indicator, country: Optional[Country] = None
+    df: pd.DataFrame,
+    indicator: Indicator,
+    country: Optional[Country] = None,
+    pct: bool = False,
 ) -> Matrix[Literal["N"], Float]:
     """
     Convert the dataframe to a matrix containing the values of the given indicator
@@ -65,6 +68,7 @@ def convert_to_matrix(
         df: The dataframe
         indicator: The indicator to be extracted
         country: The country to be extracted
+        pct: Whether to return the values as is or as percentages changes from the previous period
 
     Returns:
         The matrix containing the values of the given indicator
@@ -76,11 +80,17 @@ def convert_to_matrix(
         # Get only the row corresponding to the country
         dataframe = dataframe[dataframe["Country Code"] == country.value]
 
-    return dataframe["Value"].to_numpy()
+    if pct:
+        return dataframe["Value_pct"].to_numpy()
+    else:
+        return dataframe["Value"].to_numpy()
 
 
 def convert_to_structured_matrix(
-    df: pd.DataFrame, indicator: Indicator, country: Optional[Country] = None
+    df: pd.DataFrame,
+    indicator: Indicator,
+    country: Optional[Country] = None,
+    pct: bool = False,
 ) -> Matrix[Literal["N"], Float]:
     """
     Convert the dataframe to a matrix containing the values of the given indicator. The
@@ -91,6 +101,7 @@ def convert_to_structured_matrix(
         df: The dataframe
         indicator: The indicator
         country: The country to be extracted. If None, all the countries are considered
+        pct: Whether to return the values as is or as percentages changes from the previous period
 
     Returns:
         The matrix containing the values of the given indicator
@@ -104,15 +115,28 @@ def convert_to_structured_matrix(
 
     data = dataframe[["Value", "Date"]].to_records(index=False)
 
-    return np.array(data, dtype=[("Value", "f8"), ("Date", "O")])
+    if pct:
+        return np.array(data, dtype=[("Value_pct", "f8"), ("Date", "O")])
+    else:
+        return np.array(data, dtype=[("Value", "f8"), ("Date", "O")])
 
 
 def serialize_country_data(
     df: pd.DataFrame,
     country: Country,
-) -> dict[Indicator, Matrix[Literal["N"], Float]]:
+    pct: bool = False,
+) -> tuple[dict[Indicator, Matrix[Literal["N"], Float]], Matrix[Literal["N"], np.str_]]:
     """
-    take the country data and transform each indicator in a simple series of +1 / -1
+    Serialize the data of a country taking only the time periods in which all the indicators
+    are available and converting them to matrices. Also returns the shared time periods.
+
+    Parameters:
+        df: The dataframe
+        country: The country
+        pct: Whether to return the values as is or as percentages changes from the previous period
+
+    Returns:
+        Country's data, divided by indicator and the months common to all the indicators
     """
     country_df = df[df["Country Code"] == country.value]
     indicators_series: dict[Indicator, pd.DataFrame] = {}
@@ -167,7 +191,7 @@ def serialize_country_data(
     country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
     for indicator in Indicator:
         country_data[indicator] = convert_to_matrix(
-            indicators_series[indicator], indicator
+            indicators_series[indicator], indicator, pct=pct
         )
 
-    return country_data
+    return country_data, indicators_series[GDP]["Date"].to_numpy()
