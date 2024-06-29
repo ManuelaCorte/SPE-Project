@@ -161,6 +161,7 @@ def serialize_country_data(
         indicators_series[indicator] = indicators_series[indicator][
             abs(first_series_month - first_common_month) :
         ]
+    print(f"Country {country} starts from {first_common_year}-{first_common_month}")
 
     # * make sure that all series end to the same date
     last_common_year = min(
@@ -179,6 +180,7 @@ def serialize_country_data(
             indicators_series[indicator] = indicators_series[indicator][
                 : -abs(last_common_month - last_series_month)
             ]
+    print(f"Country {country} ends at {last_common_year}-{last_common_month}")
 
     # * check we have the same number of points for each indicator
     lengths = [len(indicators_series[indicator]) for indicator in Indicator]
