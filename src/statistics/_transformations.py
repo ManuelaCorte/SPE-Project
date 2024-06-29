@@ -111,7 +111,7 @@ def remove_differencing(
 
 
 def power_transform(
-    ts: Matrix[Literal["N"], Float], power: int
+    ts: Matrix[Literal["N"], Float], power: float
 ) -> Matrix[Literal["N"], Float]:
     """
     Apply a power transformation to a time series. For λ = 1 there is no transformation and common values of λ are 0.5 (square
@@ -133,7 +133,7 @@ def power_transform(
 
 
 def inverse_power_transform(
-    ts: Matrix[Literal["N"], Float], power: int
+    ts: Matrix[Literal["N"], Float], power: float
 ) -> Matrix[Literal["N"], Float]:
     """
     Apply the inverse of a power transformation to a time series.

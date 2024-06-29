@@ -167,7 +167,6 @@ cython_debug/
 
 # Raw dataset
 *.csv
-!data/raw/*.csv
 !data/cleaned/*.csv
 
 # Results plots

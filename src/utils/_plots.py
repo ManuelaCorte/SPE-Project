@@ -45,11 +45,21 @@ def plot_time_series(
         mode="constant",
         constant_values=np.NaN,
     )
+    moving_sd = np.sqrt(np.convolve(np.square(y - moving_average), weights, "valid"))
+    moving_sd = np.pad(
+        moving_sd,
+        (pad,),
+        mode="constant",
+        constant_values=np.NaN,
+    )
 
     _, ax = plt.subplots(1, 1, figsize=(20, 10))
     sbn.set_theme(style="darkgrid")
-    sbn.lineplot(x=x, y=y, label=args.labels[0], ax=ax)
-    sbn.lineplot(x=x, y=moving_average, label=args.labels[1], ax=ax)
+    sbn.lineplot(x=x, y=y, label="Original", ax=ax)
+    sbn.lineplot(
+        x=x, y=moving_average, label=f"Rolling average ({window})", linewidth=2, ax=ax
+    )
+    sbn.lineplot(x=x, y=moving_sd, label=f"Rolling SD ({window})", linewidth=2, ax=ax)
     ax.set_title(args.title)
     ax.set_xlabel(args.x_axis)
     ax.set_ylabel(args.y_axis)

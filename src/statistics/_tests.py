@@ -8,14 +8,14 @@ from matplotlib.figure import Figure
 from statsmodels.graphics.correlation import plot_corr_grid
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import durbin_watson
-from statsmodels.tsa.stattools import adfuller, kpss
+from statsmodels.tsa.stattools import acf, adfuller, kpss, pacf
 
 from src.structs import SignificanceResult, StationarityTest
 from src.utils import Float, Matrix, PlotOptions
 
 
 def correlation(
-    variables: list[Matrix[Literal["2 N"], Float]],
+    variables: list[Matrix[Literal["N"], Float]],
     plot_args: Optional[PlotOptions] = None,
 ) -> dict[str, Matrix[Literal["N N"], Float]]:
     """
@@ -51,8 +51,8 @@ def correlation(
     pearson: Matrix[Literal["N N"], Float] = np.corrcoef(variables_matrix)
 
     m = len(variables)
-    kendall: Matrix[Literal["N N"], Float] = np.zeros((m, m))
-    spearman: Matrix[Literal["N N"], Float] = np.zeros((m, m))
+    kendall: Matrix[Literal["N N"], Float] = np.eye(m, m)
+    spearman: Matrix[Literal["N N"], Float] = np.eye(m, m)
     for i in range(m):
         for j in range(i + 1, m):
             kendall_result: Any = stats.kendalltau(
@@ -68,7 +68,13 @@ def correlation(
             spearman[j, i] = spearman_test.statistic
 
     if plot_args is not None:
-        f: Figure = plot_corr_grid([pearson, kendall, spearman])
+        f: Figure = plot_corr_grid(
+            [pearson, kendall, spearman],
+            normcolor=True,
+            titles=["Pearson", "Kendall", "Spearman"],
+            xnames=plot_args.labels,
+            ynames=plot_args.labels,
+        )
         if plot_args.save:
             f.savefig(f"data/results/{plot_args.filename}")
     plt.show()
@@ -104,7 +110,7 @@ def stationarity(
         critvalues,
     )
 
-    stat, pvalue, lag, critvalues = kpss(x)  # type: ignore
+    stat, pvalue, lag, critvalues = kpss(x, "ct")  # type: ignore
     kpss_test: StationarityTest = StationarityTest(
         "Kwiatkowski-Phillips-Schmidt-Shin",
         "The observed time series is stationary around a determinisitc trend",
@@ -146,7 +152,7 @@ def homoscedasticity(
     return bartlett, levene
 
 
-def autocorrelation(
+def residuals_autocorrelation(
     residuals: Matrix[Literal["N"], Float], max_lag: int
 ) -> tuple[SignificanceResult, SignificanceResult, SignificanceResult]:
     """
@@ -194,3 +200,24 @@ def autocorrelation(
     )
 
     return ljung, pierce, dw
+
+
+def autocorrelation(
+    x: Matrix[Literal["N"], Float], lags: Optional[int] = None
+) -> tuple[Matrix[Literal["N"], Float], Matrix[Literal["N"], Float]]:
+    """
+    Computes the autocorrelation and the partial autocorrelation of a time series.
+
+    Parameters:
+        x: The time series to compute the autocorrelation for.
+        lags: The number of lags to compute the autocorrelation for.
+
+    Returns:
+        The autocorrelation of the time series.
+    """
+    acf_values: Matrix[Literal["N"], Float] = acf(  # type: ignore
+        x, nlags=lags, adjusted=True, fft=True
+    )
+    pacf_values: Matrix[Literal["N"], Float] = pacf(x, nlags=lags)  # type: ignore
+
+    return acf_values, pacf_values
