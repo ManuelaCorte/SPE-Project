@@ -30,7 +30,6 @@ def baum_welch(
     Returns:
         The trained hidden markov chain and known variables markov chain.
     """
-    # countries = Country
     for _ in tqdm(range(epochs), desc="training", unit="epoch"):
         A = deepcopy(hidden_markov_chain.transitions)
         B = deepcopy(known_var_markov_chain.transitions)

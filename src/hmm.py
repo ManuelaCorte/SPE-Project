@@ -58,6 +58,7 @@ if __name__ == "__main__":
     print(f"Epochs: {epochs}")
 
     countries = Country.get_all_countries()
+    # countries = [starting_country]
     countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     for country in countries:
         if os.path.exists("data/cleaned/dataset.csv"):
