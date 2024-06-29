@@ -1,4 +1,5 @@
 from enum import Enum, StrEnum
+from typing import Self
 
 # from typing import Literal
 
@@ -35,6 +36,10 @@ class Country(Enum):
     @staticmethod
     def get_all_codes() -> list[str]:
         return [str(country.value) for country in Country]
+
+    @staticmethod
+    def get_all_countries():
+        return [country for country in Country]
 
 
 class Indicator(StrEnum):

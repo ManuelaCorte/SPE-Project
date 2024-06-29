@@ -83,8 +83,9 @@ if __name__ == "__main__":
     print(known_var_markov_chain)
     print("\n--------------------------------------------------\n")
 
+    country = Country.get_all_countries()
     hidden_mc, known_mc = baum_welch(
-        hidden_markov_chain, known_var_markov_chain, countries_data, epochs
+        hidden_markov_chain, known_var_markov_chain, countries_data, country, epochs
     )
 
     print("\n--------------------------------------------------\n")
