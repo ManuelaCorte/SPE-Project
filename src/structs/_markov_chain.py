@@ -7,7 +7,8 @@ from graphviz import Digraph
 from src.structs import HiddenState, KnownVariables
 from src.utils import Float, Matrix
 
-MIN_PROBABILITY = 0.001
+MIN_PROBABILITY = 0.01
+
 
 class MarkovChain:
     """A markov chain is a stochastic model describing a sequence of possible events

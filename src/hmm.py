@@ -10,7 +10,8 @@ from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 if __name__ == "__main__":
-    default_country = Country.UNITED_STATES
+    DEFAULT_COUNTRY = Country.UNITED_STATES
+    DEFAULT_EPOCHS = 3
 
     arg_parser = argparse.ArgumentParser(add_help=False)
     arg_parser.add_argument(
@@ -27,7 +28,7 @@ if __name__ == "__main__":
         "--help",
         "-h",
         action="help",
-        help=f"Run the Baum-Welch algorithm. The starting country can be chosen from the following list (DEFAULT: {default_country.name}): {', '.join([country.name for country in Country])}",
+        help=f"Run the Baum-Welch algorithm. The starting country can be chosen from the following list (DEFAULT: {DEFAULT_COUNTRY.name}): {', '.join([country.name for country in Country])}",
     )
     args = arg_parser.parse_args()
 
@@ -44,12 +45,14 @@ if __name__ == "__main__":
         + "\t1: decrease Gross Domestic Product\n"
     )
 
-    epochs = int(args.epochs) if args.epochs and args.epochs.isdigit() else 25
+    epochs = (
+        int(args.epochs) if args.epochs and args.epochs.isdigit() else DEFAULT_EPOCHS
+    )
     starting_country = (
         Country[args.country.upper()]
         if args.country
         and args.country.upper() in [country.name for country in Country]
-        else default_country
+        else DEFAULT_COUNTRY
     )
     print(f"Starting country: {starting_country.name}")
     print(f"Epochs: {epochs}")
