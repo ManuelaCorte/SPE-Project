@@ -73,8 +73,8 @@ class MarkovChain:
                 graph.node(str(i), label=f"{state:.2f}")
 
         for i, row in enumerate(self.transitions):
-            for j, transistion in enumerate(row):
-                graph.edge(str(i), str(j), label=f"{transistion:.2f}")
+            for j, transition in enumerate(row):
+                graph.edge(str(i), str(j), label=f"{transition:.2f}")
 
         graph.render(f"data/results/{filename}")
 
@@ -102,11 +102,11 @@ class MarkovChain:
                     c.node(str(i), label=f"{HiddenState(i).name} - {state:.2f}")
 
             for i, row in enumerate(self.transitions):
-                for j, transistion in enumerate(row):
-                    if transistion < MIN_PROBABILITY:
+                for j, transition in enumerate(row):
+                    if transition < MIN_PROBABILITY:
                         c.edge(str(i), str(j), color="darkgrey", style="dotted")
                     else:
-                        c.edge(str(i), str(j), label=f"h-{transistion:.2f}")
+                        c.edge(str(i), str(j), label=f"h-{transition:.2f}")
 
         n_hidden_states = self.states.size if self.states.size > 1 else 2
 
@@ -119,8 +119,8 @@ class MarkovChain:
                 )
 
             for i, row in enumerate(known_var_markov_chain.transitions):
-                for j, transistion in enumerate(row):
-                    if transistion < MIN_PROBABILITY:
+                for j, transition in enumerate(row):
+                    if transition < MIN_PROBABILITY:
                         c.edge(
                             str(i),
                             str(j + n_hidden_states),
@@ -131,7 +131,7 @@ class MarkovChain:
                         c.edge(
                             str(i),
                             str(j + n_hidden_states),
-                            label=f"k-{transistion:.2f}",
+                            label=f"k-{transition:.2f}",
                             color="red",
                         )
 
