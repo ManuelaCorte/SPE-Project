@@ -17,17 +17,20 @@ def create_countries_data(starting_country: Country, multiple_series: bool = Fal
     countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     dates: dict[Country, Matrix[Literal["N"], np.str_]] = {}
     for country in countries:
-        if os.path.exists("data/cleaned/dataset.csv"):
-            df = pd.read_csv("data/cleaned/dataset.csv")
-        else:
-            df = clean_dataset(save_intermediate=True)
+        try:
+            if os.path.exists("data/cleaned/dataset.csv"):
+                df = pd.read_csv("data/cleaned/dataset.csv")
+            else:
+                df = clean_dataset(save_intermediate=True)
 
-        country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
+            country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
 
-        country_data, date = serialize_country_data(df, country, pct=True)
-        dates[country] = date
-        # country_data = prepate_input_for_hmm(country_data)
-        countries_data[country] = country_data
+            country_data, date = serialize_country_data(df, country, pct=True)
+            dates[country] = date
+            # country_data = prepate_input_for_hmm(country_data)
+            countries_data[country] = country_data
+        except Exception as e:
+            print(f"Error while processing {country.name}: {e}")
     return countries, countries_data, dates
 
 

@@ -144,6 +144,9 @@ def serialize_country_data(
         indicators_series[indicator] = country_df[
             country_df["Indicator Name"] == indicator.value
         ]
+        length = len(indicators_series[indicator])
+        if length == 0:
+            raise Exception(f"{country} does not have data for {indicator}")
 
     # * make sure that all series start from the same date
     first_common_year = max(
