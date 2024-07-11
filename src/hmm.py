@@ -4,10 +4,11 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from src.data import clean_dataset, serialize_country_data
 from src.models import baum_welch, construct_starting_markov_chain
-from src.structs import Country, Indicator
+from src.structs import Country, HiddenState, Indicator, KnownVariables, MarkovChain
 from src.utils import Float, Matrix
 
 
@@ -93,6 +94,41 @@ def create_countries_data_divided(
     return countries, training_data, test_data, covid_data
 
 
+def test_markov_chain(
+    starting_country: Country,
+    test_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
+    last_state: HiddenState,
+    hidden_markov_chain: MarkovChain,
+    known_var_markov_chain: MarkovChain,
+):
+    total_testing_data = len(test_data[starting_country][Indicator.GDP])
+
+    positive_testing_data = 0
+    negative_testing_data = 0
+    for value in test_data[starting_country][Indicator.GDP]:
+        if value > 0:
+            positive_testing_data += 1
+        else:
+            negative_testing_data += 1
+    print(
+        f"{starting_country.name} testing data has {positive_testing_data} positive and {negative_testing_data} negative values for GDP"
+    )
+
+    epochs = 10000
+    hidden_states = np.zeros((len(HiddenState)))
+    known_states = np.zeros((len(KnownVariables)))
+    curr_state = last_state.value
+    for _ in tqdm(range(epochs), desc="testing", unit="epoch"):
+        for _ in range(total_testing_data):
+            curr_state = hidden_markov_chain.random_walk(curr_state)
+            known_var_state = known_var_markov_chain.random_walk(curr_state)
+            hidden_states[curr_state] += 1
+            known_states[known_var_state] += 1
+    print(
+        f"{starting_country.name} random walks has produced on average {hidden_states / epochs} for the hidden states and {known_states / epochs} for the known states"
+    )
+
+
 if __name__ == "__main__":
     DEFAULT_COUNTRY = Country.ITALY
     DEFAULT_EPOCHS = 3
@@ -167,7 +203,7 @@ if __name__ == "__main__":
     print(known_var_markov_chain)
     print("\n--------------------------------------------------\n")
 
-    hidden_mc, known_mc = baum_welch(
+    baum_welch(
         hidden_markov_chain, known_var_markov_chain, training_data, countries, epochs
     )
 
@@ -185,3 +221,29 @@ if __name__ == "__main__":
     hidden_markov_chain.to_image_with_known_var(filename, known_var_markov_chain)
     print(f"Graph saved to data/results/{filename}.png")
     print("\n--------------------------------------------------\n")
+
+    print("Use test data")
+    last_state: HiddenState = HiddenState.get_state(
+        training_data[starting_country][Indicator.IR][-1],
+        training_data[starting_country][Indicator.CPI][-1],
+    )
+    test_markov_chain(
+        starting_country,
+        test_data,
+        last_state,
+        hidden_markov_chain,
+        known_var_markov_chain,
+    )
+    print()
+    print("Use covid data")
+    last_state: HiddenState = HiddenState.get_state(
+        test_data[starting_country][Indicator.IR][-1],
+        test_data[starting_country][Indicator.CPI][-1],
+    )
+    test_markov_chain(
+        starting_country,
+        covid_data,
+        last_state,
+        hidden_markov_chain,
+        known_var_markov_chain,
+    )
