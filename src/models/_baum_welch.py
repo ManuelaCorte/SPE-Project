@@ -74,7 +74,7 @@ def baum_welch(
                         gammas[r][i][t]
                         for r in range(R)
                         for t in range(Ts[r])
-                        if KnownVariables.get_variable(Ys[r][t]).value == j
+                        if KnownVariables.get_variable(Ys[r][t]).value != j
                     ]
                 ) / np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
 
