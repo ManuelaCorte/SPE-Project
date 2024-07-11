@@ -105,13 +105,21 @@ def test_markov_chain(
 
     positive_testing_data = 0
     negative_testing_data = 0
-    for value in test_data[starting_country][Indicator.GDP]:
+    hidden_states_test = np.zeros((len(HiddenState)))
+    for i in range(len(test_data[starting_country][Indicator.GDP])):
+        value = test_data[starting_country][Indicator.GDP][i]
         if value > 0:
             positive_testing_data += 1
         else:
             negative_testing_data += 1
+
+        ir = test_data[starting_country][Indicator.IR][i]
+        cpi = test_data[starting_country][Indicator.CPI][i]
+        state = HiddenState.get_state(ir, cpi)
+        hidden_states_test[state.value] += 1
+
     print(
-        f"{starting_country.name} testing data has {positive_testing_data} positive and {negative_testing_data} negative values for GDP"
+        f"{starting_country.name} testing data has {positive_testing_data} positive and {negative_testing_data} negative values for GDP ({hidden_states_test})"
     )
 
     epochs = 1000
