@@ -15,7 +15,6 @@ def create_countries_data(starting_country: Country, multiple_series: bool = Fal
     countries = Country.get_all_countries() if multiple_series else [starting_country]
     countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     dates: dict[Country, Matrix[Literal["N"], np.str_]] = {}
-    print()
     for country in countries:
         if os.path.exists("data/cleaned/dataset.csv"):
             df = pd.read_csv("data/cleaned/dataset.csv")
@@ -28,10 +27,6 @@ def create_countries_data(starting_country: Country, multiple_series: bool = Fal
         dates[country] = date
         # country_data = prepate_input_for_hmm(country_data)
         countries_data[country] = country_data
-        print(
-            f"Country {country.name.ljust(10, ' ')}\tstarts from {date[0]} and ends at {date[-1]}"
-        )
-    print()
     return countries, countries_data, dates
 
 
@@ -49,6 +44,8 @@ def divide_training_test_covid_data(
     training_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     test_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     covid_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
+
+    print()
     for country in countries:
         country_data = countries_data[country]
 
@@ -70,6 +67,16 @@ def divide_training_test_covid_data(
             training_data[country][indicator] = data[:test_date_index:]
             test_data[country][indicator] = data[test_date_index:covid_date_index:]
             covid_data[country][indicator] = data[covid_date_index::]
+
+        training_points = len(training_data[country][Indicator.GDP])
+        testing_points = len(test_data[country][Indicator.GDP])
+        covid_points = len(covid_data[country][Indicator.GDP])
+
+        country_name = "{:<13}".format(country.name)
+        print(
+            f"Country {country_name} starts from {this_date[0]} and ends at {this_date[-1]} ({training_points} training, {testing_points} test, {covid_points} covid)"
+        )
+    print()
 
     return training_data, test_data, covid_data
 
