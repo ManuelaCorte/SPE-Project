@@ -32,7 +32,9 @@ def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataF
             os.remove(intermediate_file_path + file)
         for file in os.listdir("data/cleaned/"):
             os.remove("data/cleaned/" + file)
+        print("Removed all intermediate and final files")
 
+    print("Reading raw dataset")
     reader: TextFileReader = pd.read_csv(
         "data/raw/IFS_09-26-2023 00-50-38-77_timeSeries.csv",
         chunksize=chunksize,

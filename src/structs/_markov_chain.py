@@ -55,6 +55,18 @@ class MarkovChain:
             The probabilities of being in every state after n steps."""
         return self.states @ self.transitions**n
 
+    def random_walk(self, prev_state: int) -> int:
+        """
+        Computes the next state in the random walk.
+
+        Parameters:
+            prev_state: The current state of the chain.
+
+        Returns:
+            The next state in the random walk.
+        """
+        return np.random.choice(range(len(self.states)), p=self.transitions[prev_state])
+
     def to_image(self, filename: str) -> None:
         """
         Creates a graph image of the Markov Chain.

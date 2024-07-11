@@ -144,6 +144,9 @@ def serialize_country_data(
         indicators_series[indicator] = country_df[
             country_df["Indicator Name"] == indicator.value
         ]
+        length = len(indicators_series[indicator])
+        if length == 0:
+            raise Exception(f"{country} does not have data for {indicator}")
 
     # * make sure that all series start from the same date
     first_common_year = max(
@@ -161,7 +164,6 @@ def serialize_country_data(
         indicators_series[indicator] = indicators_series[indicator][
             abs(first_series_month - first_common_month) :
         ]
-    print(f"Country {country} starts from {first_common_year}-{first_common_month}")
 
     # * make sure that all series end to the same date
     last_common_year = min(
@@ -180,7 +182,6 @@ def serialize_country_data(
             indicators_series[indicator] = indicators_series[indicator][
                 : -abs(last_common_month - last_series_month)
             ]
-    print(f"Country {country} ends at {last_common_year}-{last_common_month}")
 
     # * check we have the same number of points for each indicator
     lengths = [len(indicators_series[indicator]) for indicator in Indicator]
