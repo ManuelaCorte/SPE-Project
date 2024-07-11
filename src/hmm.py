@@ -114,7 +114,7 @@ def test_markov_chain(
         f"{starting_country.name} testing data has {positive_testing_data} positive and {negative_testing_data} negative values for GDP"
     )
 
-    epochs = 10000
+    epochs = 1000
     hidden_states = np.zeros((len(HiddenState)))
     known_states = np.zeros((len(KnownVariables)))
     curr_state = last_state.value
@@ -126,6 +126,9 @@ def test_markov_chain(
             known_states[known_var_state] += 1
     print(
         f"{starting_country.name} random walks has produced on average {hidden_states / epochs} for the hidden states and {known_states / epochs} for the known states"
+    )
+    print(
+        f"On average we have predicted {known_states[0] / epochs} positive and {known_states[1] / epochs} negative values for GDP"
     )
 
 
