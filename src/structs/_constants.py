@@ -14,22 +14,22 @@ class Country(Enum):
     # ARGENTINA = 213
     # AUSTRALIA = 193
     BRAZIL = 223
-    CANADA = 156
+    # CANADA = 156
     # FRANCE = 132
     # GERMANY = 134
-    INDIA = 534
+    # INDIA = 534
     INDONESIA = 536
     ITALY = 136
     # CHINA = 924
-    JAPAN = 158
+    # JAPAN = 158
     MEXICO = 273
-    RUSSIA = 922
+    # RUSSIA = 922
     # SAUDI_ARABIA = 456
     SOUTH_AFRICA = 199
     SOUTH_KOREA = 542
     # TURKEY = 186
     # UNITED_KINGDOM = 122
-    UNITED_STATES = 111
+    # UNITED_STATES = 111
     # EUROPEAN_UNION = 163
     # G20 = 0
 
