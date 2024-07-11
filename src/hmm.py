@@ -11,10 +11,11 @@ from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 
-def create_countries_data(starting_country: Country, multi_series: bool = False):
-    countries = Country.get_all_countries() if multi_series else [starting_country]
+def create_countries_data(starting_country: Country, multiple_series: bool = False):
+    countries = Country.get_all_countries() if multiple_series else [starting_country]
     countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
     dates: dict[Country, Matrix[Literal["N"], np.str_]] = {}
+    print()
     for country in countries:
         if os.path.exists("data/cleaned/dataset.csv"):
             df = pd.read_csv("data/cleaned/dataset.csv")
@@ -27,6 +28,10 @@ def create_countries_data(starting_country: Country, multi_series: bool = False)
         dates[country] = date
         # country_data = prepate_input_for_hmm(country_data)
         countries_data[country] = country_data
+        print(
+            f"Country {country.name.ljust(10, ' ')}\tstarts from {date[0]} and ends at {date[-1]}"
+        )
+    print()
     return countries, countries_data, dates
 
 
@@ -70,10 +75,10 @@ def divide_training_test_covid_data(
 
 
 def create_countries_data_divided(
-    starting_country: Country, multi_series: bool = False
+    starting_country: Country, multiple_series: bool = False
 ):
     countries, countries_data, dates = create_countries_data(
-        starting_country, multi_series
+        starting_country, multiple_series
     )
     training_data, test_data, covid_data = divide_training_test_covid_data(
         countries, countries_data, dates
@@ -95,6 +100,12 @@ if __name__ == "__main__":
         "--country",
         "-c",
         help="The countries to run the Baum-Welch algorithm on. For more information use --help",
+    )
+    arg_parser.add_argument(
+        "--multiple-series",
+        "-m",
+        action="store_true",
+        help="You can train the Markov chain on all countries series instead of just the starting country",
     )
     arg_parser.add_argument(
         "--help",
@@ -126,11 +137,13 @@ if __name__ == "__main__":
         and args.country.upper() in [country.name for country in Country]
         else DEFAULT_COUNTRY
     )
+    multiple_series = args.multiple_series
     print(f"Starting country: {starting_country.name}")
     print(f"Epochs: {epochs}")
+    print(f"Use multiple series: {multiple_series}")
 
     countries, training_data, test_data, covid_data = create_countries_data_divided(
-        starting_country
+        starting_country, multiple_series
     )
 
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(
@@ -138,6 +151,8 @@ if __name__ == "__main__":
     )
 
     print("\n--------------------------------------------------\n")
+    print(f"Initial chain created from training data of {starting_country.name}")
+    print()
     print("Hidden Markov Chain")
     print(hidden_markov_chain)
     print()
@@ -150,6 +165,8 @@ if __name__ == "__main__":
     )
 
     print("\n--------------------------------------------------\n")
+    print("Final chain after training")
+    print()
     print("Hidden Markov Chain")
     print(hidden_markov_chain)
     print()
@@ -160,3 +177,4 @@ if __name__ == "__main__":
     filename = "hmm"
     hidden_markov_chain.to_image_with_known_var(filename, known_var_markov_chain)
     print(f"Graph saved to data/results/{filename}.png")
+    print("\n--------------------------------------------------\n")
