@@ -97,27 +97,21 @@ def create_countries_data_divided(
     return countries, training_data, test_data, covid_data
 
 
-def test_markov_chain(
-    starting_country: Country,
-    test_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
-    last_state: HiddenState,
-    hidden_markov_chain: MarkovChain,
-    known_var_markov_chain: MarkovChain,
+def count_data_istances(
+    data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]]
 ):
-    total_testing_data = len(test_data[starting_country][Indicator.GDP])
-
     positive_testing_data = 0
     negative_testing_data = 0
     hidden_states_test = np.zeros((len(HiddenState)))
-    for i in range(len(test_data[starting_country][Indicator.GDP])):
-        value = test_data[starting_country][Indicator.GDP][i]
+    for i in range(len(data[starting_country][Indicator.GDP])):
+        value = data[starting_country][Indicator.GDP][i]
         if value > 0:
             positive_testing_data += 1
         else:
             negative_testing_data += 1
 
-        ir = test_data[starting_country][Indicator.IR][i]
-        cpi = test_data[starting_country][Indicator.CPI][i]
+        ir = data[starting_country][Indicator.IR][i]
+        cpi = data[starting_country][Indicator.CPI][i]
         state = HiddenState.get_state(ir, cpi)
         hidden_states_test[state.value] += 1
 
@@ -125,7 +119,18 @@ def test_markov_chain(
         f"{starting_country.name} testing data has {positive_testing_data} positive and {negative_testing_data} negative values for GDP ({hidden_states_test})"
     )
 
+
+def test_markov_chain(
+    starting_country: Country,
+    test_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
+    last_state: HiddenState,
+    hidden_markov_chain: MarkovChain,
+    known_var_markov_chain: MarkovChain,
+):
+    count_data_istances(test_data)
+
     epochs = 1000
+    total_testing_data = len(test_data[starting_country][Indicator.GDP])
     hidden_states = np.zeros((len(HiddenState)))
     known_states = np.zeros((len(KnownVariables)))
     curr_state = last_state.value
@@ -236,6 +241,9 @@ if __name__ == "__main__":
     print(f"Graph saved to data/results/{filename}.png")
     print("\n--------------------------------------------------\n")
 
+    print("See training data")
+    count_data_istances(training_data)
+    print()
     print("Use test data")
     last_state: HiddenState = HiddenState.get_state(
         training_data[starting_country][Indicator.IR][-1],
