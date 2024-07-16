@@ -11,27 +11,45 @@ class Country(Enum):
     https://www.imf.org/external/pubs/ft/weo/2022/02/weodata/co.pdf
     """
 
-    # ARGENTINA = 213
-    # AUSTRALIA = 193
+    ARGENTINA = 213
+    AUSTRALIA = 193
+    AUSTRIA = 122
+    AZERBAIJAN = 912
+    BELGIUM = 124
+    BANGLADESH = 513
     BRAZIL = 223
-    # CANADA = 156
-    # FRANCE = 132
-    # GERMANY = 134
+    CANADA = 156
+    CHILE = 228
+    DENMARK = 128
+    EGYPT = 469
+    FINLAND = 172
+    FRANCE = 132
+    GERMANY = 134
+    GREECE = 174
+    IRELAND = 178
     INDIA = 534
     INDONESIA = 536
     ITALY = 136
-    # CHINA = 924
-    # JAPAN = 158
+    ISRAEL = 436
+    CHINA = 924
+    JAPAN = 158
     MEXICO = 273
+    MOROCCO = 686
+    NETHERLANDS = 138
+    NEW_ZEALAND = 196
+    NORWAY = 142
+    PAKISTAN = 564
     RUSSIA = 922
-    # SAUDI_ARABIA = 456
+    SAUDI_ARABIA = 456
     SOUTH_AFRICA = 199
+    SPAIN = 184
+    SWEDEN = 144
+    SWITZERLAND = 146
     SOUTH_KOREA = 542
-    # TURKEY = 186
-    # UNITED_KINGDOM = 122
+    TURKEY = 186
+    UKRAINE = 926
+    UNITED_KINGDOM = 122
     UNITED_STATES = 111
-    # EUROPEAN_UNION = 163
-    # G20 = 0
 
     @staticmethod
     def get_all_codes() -> list[str]:

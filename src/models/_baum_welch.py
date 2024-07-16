@@ -40,9 +40,12 @@ def baum_welch(
         xis: list[npt.NDArray[np.float64]] = []
         Ys: list[list[int]] = []
         Ts: list[int] = []
-        R = len(countries)
+        filtered_countries = [
+            country for country in countries if country in countries_data
+        ]
+        R = len(filtered_countries)
 
-        for country in countries:
+        for country in filtered_countries:
             country_data = countries_data[country]
             Y = [KnownVariables.get_variable(gdp).value for gdp in country_data[GDP]]
             T = len(Y)

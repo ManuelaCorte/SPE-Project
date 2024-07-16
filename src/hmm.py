@@ -51,6 +51,8 @@ def divide_training_test_covid_data(
 
     print()
     for country in countries:
+        if not country in countries_data:
+            continue
         country_data = countries_data[country]
 
         training_data[country] = {}
