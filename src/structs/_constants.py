@@ -1,7 +1,4 @@
 from enum import Enum, StrEnum
-from typing import Self
-
-# from typing import Literal
 
 
 class Country(Enum):
@@ -48,7 +45,7 @@ class Country(Enum):
     SOUTH_KOREA = 542
     TURKEY = 186
     UKRAINE = 926
-    UNITED_KINGDOM = 122
+    UNITED_KINGDOM = 112
     UNITED_STATES = 111
 
     @staticmethod

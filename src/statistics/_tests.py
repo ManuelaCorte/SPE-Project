@@ -4,18 +4,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
-from matplotlib.figure import Figure
-from statsmodels.graphics.correlation import plot_corr_grid
 from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.stats.stattools import durbin_watson
 from statsmodels.tsa.stattools import acf, adfuller, kpss, pacf
 
-from src.structs import SignificanceResult, StationarityTest
+from src.structs import Indicator, SignificanceResult, StationarityTest
 from src.utils import Float, Matrix, PlotOptions
 
 
 def correlation(
-    variables: list[Matrix[Literal["N"], Float]],
+    values: dict[Indicator, Matrix[Literal["N"], Float]],
     plot_args: Optional[PlotOptions] = None,
 ) -> dict[str, Matrix[Literal["N N"], Float]]:
     """
@@ -40,6 +38,7 @@ def correlation(
     Returns:
         The correlation matrix for the three correlation coefficients.s
     """
+    variables = list(values.values())
     s = variables[0].shape
     for var in variables:
         if len(var.shape) > 1:
@@ -50,11 +49,11 @@ def correlation(
     variables_matrix: Matrix[Literal["M N"], Float] = np.stack(variables, axis=0)
     pearson: Matrix[Literal["N N"], Float] = np.corrcoef(variables_matrix)
 
-    m = len(variables)
-    kendall: Matrix[Literal["N N"], Float] = np.eye(m, m)
-    spearman: Matrix[Literal["N N"], Float] = np.eye(m, m)
-    for i in range(m):
-        for j in range(i + 1, m):
+    n = len(values)
+    kendall: Matrix[Literal["N N"], Float] = np.eye(n, n)
+    spearman: Matrix[Literal["N N"], Float] = np.eye(n, n)
+    for i in range(n):
+        for j in range(i + 1, n):
             kendall_result: Any = stats.kendalltau(
                 variables[i], variables[j], nan_policy="raise"
             )
@@ -68,13 +67,24 @@ def correlation(
             spearman[j, i] = spearman_test.statistic
 
     if plot_args is not None:
-        f: Figure = plot_corr_grid(
-            [pearson, kendall, spearman],
-            normcolor=True,
-            titles=["Pearson", "Kendall", "Spearman"],
-            xnames=plot_args.labels,
-            ynames=plot_args.labels,
-        )
+        f, ax = plt.subplots(1, n, figsize=(15, 5))
+        # plot correlation as heatmap
+        ax[0].imshow(pearson, cmap="coolwarm", interpolation="nearest")
+        ax[0].set_title("Pearson correlation")
+
+        ax[1].imshow(kendall, cmap="coolwarm", interpolation="nearest")
+        ax[1].set_title("Kendall correlation")
+
+        ax[2].imshow(spearman, cmap="coolwarm", interpolation="nearest")
+        ax[2].set_title("Spearman correlation")
+
+        indicators: list[str] = [indicator.name for indicator in values.keys()]
+        for i in range(3):
+            ax[i].set_xticks(range(n))
+            ax[i].set_yticks(range(n))
+            ax[i].set_xticklabels(indicators)
+            ax[i].set_yticklabels(indicators)
+
         if plot_args.save:
             f.savefig(f"data/results/{plot_args.filename}")
     plt.show()

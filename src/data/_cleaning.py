@@ -50,12 +50,11 @@ def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataF
 
     countries: list[DataFrame] = []
     for country in Country:
-        # if country == Country.G20:
-        #     continue
         print("Processing", country.name.capitalize())
-        gdp_interest = _get_monthly_data(df, country)
+        gdp = _get_monthly_data(df, country, Indicator.GDP)
+        interest = _get_monthly_data(df, country, Indicator.IR)
         inflation = _clean_inflation_dataset(country)
-        data = pd.concat([gdp_interest, inflation], ignore_index=True)
+        data = pd.concat([gdp, interest, inflation], ignore_index=True)
         data["Date"] = pd.to_datetime(
             data["Year"].astype(str) + "-" + data["Month"].astype(str).str.zfill(2),
             format="%Y-%m",
@@ -170,7 +169,13 @@ def _remove_unused_information(reader: TextFileReader) -> DataFrame:
 
         chunks.append(chunk)
 
-    return pd.concat(chunks, ignore_index=True)
+    df = pd.concat(chunks, ignore_index=True)
+    time_periods = get_time_periods_colums(df.columns)
+
+    # Remove all rows where all time columns are nan
+    df = df.dropna(axis=0, how="all", subset=time_periods)
+
+    return df
 
 
 def _get_different_time_granularities(
@@ -218,7 +223,9 @@ def _get_different_time_granularities(
     return dataframe
 
 
-def _get_monthly_data(dataframe: DataFrame, country: Country) -> DataFrame:
+def _get_monthly_data(
+    dataframe: DataFrame, country: Country, indicator: Indicator
+) -> DataFrame:
     """Returns dataframe with monthly data and interpolation of quarter data for gdp.
     The dataframe is then reshaped to have the form Country | Indicator | Year | Month | Value
 
@@ -229,47 +236,58 @@ def _get_monthly_data(dataframe: DataFrame, country: Country) -> DataFrame:
          cleaned dataframe
     """
     country_dataframe = dataframe[dataframe["Country Code"] == str(country.value)]
-    gdp_quarter = _get_different_time_granularities(
-        country_dataframe, TimePeriod.QUARTER
-    )
-    gdp_quarter = gdp_quarter[
-        gdp_quarter["Indicator Name"].str.contains(Indicator.GDP.value)
-    ]
-    gdp_quarter = _reshape_dataframe(gdp_quarter)
-
-    # Convert the date to yyyy-mm-dd format
-    gdp_quarter["Date"] = pd.to_datetime(
-        gdp_quarter["Year"].astype(str)
-        + "-"
-        + gdp_quarter["Month"].astype(str).str.zfill(2),
-        format="%Y-%m",
-    )
-    gdp_quarter["Date"] = pd.to_datetime(gdp_quarter["Date"]).dt.to_period("M")
-    gdp_quarter = gdp_quarter.set_index("Date")
-
-    # Interpolate the quarterly data to get monthly data
-    gdp_month = gdp_quarter.resample("M").interpolate()
-    gdp_month["Date"] = gdp_month.index
-    gdp_month["Year"] = gdp_month["Date"].dt.year
-    gdp_month["Month"] = gdp_month["Date"].dt.month
-    gdp_month = gdp_month.drop(columns=["Date"])
-    gdp_month = gdp_month.reset_index(drop=True)
-
-    # Repeat indicator name and country code for each month
-    gdp_month["Indicator Name"] = Indicator.GDP.value
-    gdp_month["Country Code"] = country.value
-    gdp_month["Country Name"] = country.name.capitalize()
-
-    # Get monthly data for all other indicators
-    monthly_data = _get_different_time_granularities(
+    indicator_monthly = _get_different_time_granularities(
         country_dataframe, TimePeriod.MONTH
     )
-    interest_rates = monthly_data[monthly_data["Indicator Name"] == Indicator.IR.value]
-    interest_rates = _reshape_dataframe(interest_rates)
+    indicator_monthly = indicator_monthly[
+        indicator_monthly["Indicator Name"].str.contains(indicator.value)
+    ]
+    months_columns = get_time_periods_colums(indicator_monthly.columns)
+    if not indicator_monthly[months_columns].isnull().all().all():
+        return _reshape_dataframe(indicator_monthly)
 
-    df = pd.concat([gdp_month, interest_rates], ignore_index=True)
+    print(
+        f"Interpolating quarterly data for {country.name.capitalize()} and indicator {indicator.value}"
+    )
 
-    return df
+    indicator_quarter = _get_different_time_granularities(
+        country_dataframe, TimePeriod.QUARTER
+    )
+    indicator_quarter = indicator_quarter[
+        indicator_quarter["Indicator Name"].str.contains(indicator.value)
+    ]
+    quarters_columns = get_time_periods_colums(indicator_quarter.columns)
+    if indicator_quarter[quarters_columns].isnull().all().all():
+        return pd.DataFrame()
+
+    indicator_quarter = _reshape_dataframe(indicator_quarter)
+
+    # Convert the date to yyyy-mm-dd format
+    indicator_quarter["Date"] = pd.to_datetime(
+        indicator_quarter["Year"].astype(str)
+        + "-"
+        + indicator_quarter["Month"].astype(str).str.zfill(2),
+        format="%Y-%m",
+    )
+    indicator_quarter["Date"] = pd.to_datetime(indicator_quarter["Date"]).dt.to_period(
+        "M"
+    )
+    indicator_quarter = indicator_quarter.set_index("Date")
+
+    # Interpolate the quarterly data to get monthly data
+    indicator_month = indicator_quarter.resample("M").interpolate()
+    indicator_month["Date"] = indicator_month.index
+    indicator_month["Year"] = indicator_month["Date"].dt.year
+    indicator_month["Month"] = indicator_month["Date"].dt.month
+    indicator_month = indicator_month.drop(columns=["Date"])
+    indicator_month = indicator_month.reset_index(drop=True)
+
+    # Repeat indicator name and country code for each month
+    indicator_month["Indicator Name"] = indicator.value
+    indicator_month["Country Code"] = country.value
+    indicator_month["Country Name"] = country.name.capitalize()
+
+    return indicator_month
 
 
 def _reshape_dataframe(df: DataFrame) -> DataFrame:
@@ -371,9 +389,9 @@ def _convert_to_percentage(df: DataFrame) -> DataFrame:
     gdp = df[df["Indicator Name"].str.contains(Indicator.GDP.value)].copy()
     ir = df[df["Indicator Name"].str.contains(Indicator.IR.value)].copy()
     cpi = df[df["Indicator Name"].str.contains(Indicator.CPI.value)].copy()
-    gdp["Value_pct"] = df["Value"].pct_change()
-    ir["Value_pct"] = df["Value"].pct_change()
-    cpi["Value_pct"] = df["Value"].pct_change()
+    gdp["Value_pct"] = gdp["Value"].pct_change()
+    ir["Value_pct"] = ir["Value"].pct_change()
+    cpi["Value_pct"] = ir["Value"].pct_change()
 
     # Remove the first row
     gdp = gdp.iloc[1:]
