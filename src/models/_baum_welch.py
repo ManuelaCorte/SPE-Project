@@ -61,22 +61,28 @@ def baum_welch(
 
         for i in range(n):
             for j in range(n):
-                A[i][j] = np.sum(
+                num = np.sum(
                     [xis[r][i][j][t] for r in range(R) for t in range(Ts[r] - 1)]
-                ) / np.sum(
+                )
+                den = np.sum(
                     [gammas[r][i][t] for r in range(R) for t in range(Ts[r] - 1)]
                 )
+                if den != 0:
+                    A[i][j] = num / den
 
         for i in range(n):
             for j in range(len(KnownVariables.get_all_variables())):
-                B[i][j] = np.sum(
+                num = np.sum(
                     [
                         gammas[r][i][t]
                         for r in range(R)
                         for t in range(Ts[r])
                         if KnownVariables.get_variable(Ys[r][t]).value != j
                     ]
-                ) / np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
+                )
+                den = np.sum([gammas[r][i][t] for r in range(R) for t in range(Ts[r])])
+                if den != 0:
+                    B[i][j] = num / den
 
         hidden_markov_chain.transitions = A
         known_var_markov_chain.transitions = B
@@ -146,10 +152,12 @@ def construct_starting_markov_chain(
     hidden_states = hidden_states / np.sum(hidden_states)
     known_var_states = known_var_states / np.sum(known_var_states)
     for i in range(4):
-        hidden_transitions[i] = hidden_transitions[i] / np.sum(hidden_transitions[i])
-        known_var_transitions[i] = known_var_transitions[i] / np.sum(
-            known_var_transitions[i]
-        )
+        hidden_sum = np.sum(hidden_transitions[i])
+        if hidden_sum != 0:
+            hidden_transitions[i] = hidden_transitions[i] / hidden_sum
+        known_sum = np.sum(known_var_transitions[i])
+        if known_sum != 0:
+            known_var_transitions[i] = known_var_transitions[i] / known_sum
 
     # * create the markov chains
     hidden_markov_chain: MarkovChain = MarkovChain(
