@@ -391,7 +391,7 @@ def _convert_to_percentage(df: DataFrame) -> DataFrame:
     cpi = df[df["Indicator Name"].str.contains(Indicator.CPI.value)].copy()
     gdp["Value_pct"] = gdp["Value"].pct_change()
     ir["Value_pct"] = ir["Value"].pct_change()
-    cpi["Value_pct"] = ir["Value"].pct_change()
+    cpi["Value_pct"] = cpi["Value"].pct_change()
 
     # Remove the first row
     gdp = gdp.iloc[1:]
