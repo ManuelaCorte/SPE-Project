@@ -1,37 +1,13 @@
 import argparse
-import os
 from typing import Literal
 
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
-from src.data import clean_dataset, serialize_country_data
+from src.data import create_countries_data
 from src.models import baum_welch, construct_starting_markov_chain
 from src.structs import Country, HiddenState, Indicator, KnownVariables, MarkovChain
 from src.utils import Float, Matrix
-
-
-def create_countries_data(starting_country: Country, multiple_series: bool = False):
-    countries = Country.get_all_countries() if multiple_series else [starting_country]
-    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
-    dates: dict[Country, Matrix[Literal["N"], np.str_]] = {}
-    for country in countries:
-        try:
-            if os.path.exists("data/cleaned/dataset.csv"):
-                df = pd.read_csv("data/cleaned/dataset.csv")
-            else:
-                df = clean_dataset(save_intermediate=True)
-
-            country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
-
-            country_data, date = serialize_country_data(df, country, pct=True)
-            dates[country] = date
-            # country_data = prepate_input_for_hmm(country_data)
-            countries_data[country] = country_data
-        except Exception as e:
-            print(f"Error while processing {country.name}: {e}")
-    return countries, countries_data, dates
 
 
 def divide_training_test_covid_data(
@@ -51,7 +27,7 @@ def divide_training_test_covid_data(
 
     print()
     for country in countries:
-        if not country in countries_data:
+        if country not in countries_data:
             continue
         country_data = countries_data[country]
 
@@ -91,7 +67,7 @@ def create_countries_data_divided(
     starting_country: Country, multiple_series: bool = False
 ):
     countries, countries_data, dates = create_countries_data(
-        starting_country, multiple_series
+        starting_country, multiple_series, pct=True
     )
     training_data, test_data, covid_data = divide_training_test_covid_data(
         countries, countries_data, dates

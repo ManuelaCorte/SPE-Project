@@ -1,3 +1,4 @@
+import os
 from typing import Any, Literal, Optional
 
 import numpy as np
@@ -198,3 +199,43 @@ def serialize_country_data(
         )
 
     return country_data, indicators_series[GDP]["Date"].to_numpy()
+
+
+def create_countries_data(
+    country: Country, all_countries: bool, pct: bool
+) -> tuple[
+    list[Country],
+    dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
+    dict[Country, Matrix[Literal["N"], np.str_]],
+]:
+    """Serilize the data for the given country so that only the time periods in which all the
+    indicators are available are considered and converted to matrices.
+
+    Parameters:
+        country: The country to be considered
+        all_countries: Whether to consider all the countries or only the given one
+        pct: Whether to return the values as is or as percentages changes from the previous period or as raw values
+
+    Returns:
+        The countries, the data for the countries and the dates
+    """
+    countries = Country.get_all_countries() if all_countries else [country]
+    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
+    dates: dict[Country, Matrix[Literal["N"], np.str_]] = {}
+    for country in countries:
+        if os.path.exists("data/cleaned/dataset.csv"):
+            df = pd.read_csv("data/cleaned/dataset.csv")
+        else:
+            raise FileNotFoundError(
+                "The cleaned dataset is not available. Run the data generation script first."
+            )
+
+        try:
+            country_data: dict[Indicator, Matrix[Literal["N"], Float]] = {}
+
+            country_data, date = serialize_country_data(df, country, pct=pct)
+            dates[country] = date
+            countries_data[country] = country_data
+        except Exception as e:
+            print(f"Error while processing {country.name}: {e}")
+    return countries, countries_data, dates

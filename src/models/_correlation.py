@@ -1,7 +1,5 @@
-from pprint import pprint
 from typing import Any, Literal
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import kendalltau, spearmanr
 from statsmodels.regression.linear_model import OLS, RegressionResultsWrapper
@@ -58,11 +56,77 @@ def prais_winsten_estimation(
 
 
 def bootstrap_correlation(
+    features: dict[Indicator, Matrix[Literal["N"], Float]],
+    repetitions: int,
+    alpha: float,
+) -> tuple[
+    tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
+    tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
+    tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
+]:
+    """
+    Compute the mutual correlation between all indicators in the features dictionary.
+
+    Parameters:
+        features: A dictionary containing the features to compute the correlation for.
+        repetitions: The number of repetitions used for bootstrapping the correlation.
+        alpha: The significance level used for computing the bootstrapped confidence interval.
+
+    Returns:
+        The Pearson, Spearman and Kendall correlation matrices.
+    """
+    n = len(features)
+    pearson_matrix = np.ones((n, n))
+    kendall_matrix = np.ones((n, n))
+    spearmanr_matrix = np.ones((n, n))
+
+    pearson_ci_matrix = np.ones((n, n, 2))
+    kendall_ci_matrix = np.ones((n, n, 2))
+    spearmanr_ci_matrix = np.ones((n, n, 2))
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            name1 = Indicator.get_all_names()[i]
+            name2 = Indicator.get_all_names()[j]
+            indicator1 = Indicator(name1)
+            indicator2 = Indicator(name2)
+            print(f"Correlation between {indicator1.name} and {indicator2.name}")
+            corr = _bootstrapping(
+                features[indicator1],
+                features[indicator2],
+                repetitions=repetitions,
+                alpha=alpha,
+            )
+
+            pearson_matrix[i, j] = corr[0]["mean"]
+            pearson_matrix[j, i] = corr[0]["mean"]
+            pearson_ci_matrix[i, j] = corr[0]["confidence_interval"]
+            pearson_ci_matrix[j, i] = corr[0]["confidence_interval"]
+
+            kendall_matrix[i, j] = corr[2]["mean"]
+            kendall_matrix[j, i] = corr[2]["mean"]
+            kendall_ci_matrix[i, j] = corr[2]["confidence_interval"]
+            kendall_ci_matrix[j, i] = corr[2]["confidence_interval"]
+
+            spearmanr_matrix[i, j] = corr[1]["mean"]
+            spearmanr_matrix[j, i] = corr[1]["mean"]
+            spearmanr_ci_matrix[i, j] = corr[1]["confidence_interval"]
+            spearmanr_ci_matrix[j, i] = corr[1]["confidence_interval"]
+
+    return (
+        (pearson_matrix, pearson_ci_matrix),
+        (kendall_matrix, kendall_ci_matrix),
+        (spearmanr_matrix, spearmanr_ci_matrix),
+    )
+
+
+def _bootstrapping(
     ts1: Matrix[Literal["N"], Float],
     ts2: Matrix[Literal["N"], Float],
     repetitions: int,
     alpha: float,
 ) -> list[dict[str, Any]]:
+    """Computes the Pearson, Kendall and Spearman correlation between two time series using bootstrapping."""
     pearson_correlations: list[float] = []
     kendall_correlations: list[float] = []
     spearman_correlations: list[float] = []
@@ -102,90 +166,5 @@ def bootstrap_correlation(
             np.percentile(spearman_correlations, 100 * (1 - alpha / 2)),
         ],
     }
-    ("Pearson correlation")
-    pprint(pearson)
-    pprint("Spearman correlation")
-    pprint(spearman)
-    pprint("Kendall correlation")
-    pprint(kendall)
 
     return [pearson, kendall, spearman]
-
-
-def plot_multiple_correlations(features: dict[Indicator, Matrix[Literal["N"], Float]]):
-    n = len(features)
-    pearson_matrix = np.ones((n, n))
-    spearmanr_matrix = np.ones((n, n))
-    kendall_matrix = np.ones((n, n))
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            name1 = Indicator.get_all_names()[i]
-            name2 = Indicator.get_all_names()[j]
-            indicator1 = Indicator(name1)
-            indicator2 = Indicator(name2)
-            print(f"Correlation between {indicator1.name} and {indicator2.name}")
-            corr = bootstrap_correlation(
-                features[indicator1],
-                features[indicator2],
-                1000,
-                0.05,
-            )
-
-            pearson_matrix[i, j] = corr[0]["mean"]
-            pearson_matrix[j, i] = corr[0]["mean"]
-            spearmanr_matrix[i, j] = corr[1]["mean"]
-            spearmanr_matrix[j, i] = corr[1]["mean"]
-            kendall_matrix[i, j] = corr[2]["mean"]
-            kendall_matrix[j, i] = corr[2]["mean"]
-
-    f, ax = plt.subplots(1, 3, figsize=(15, 5))
-    cax = ax[0].matshow(pearson_matrix, cmap="coolwarm", vmin=-1, vmax=1)
-    ax[0].set_title("Pearson")
-    for i in range(3):
-        for j in range(i, 3):
-            ax[0].text(
-                j,
-                i,
-                round(pearson_matrix[i, j], 2),
-                ha="center",
-                va="center",
-                color="black",
-            )
-
-    cax = ax[1].matshow(kendall_matrix, cmap="coolwarm", vmin=-1, vmax=1)
-    ax[1].set_title("Kendall")
-    for i in range(
-        3,
-    ):
-        for j in range(i, 3):
-            ax[1].text(
-                j,
-                i,
-                round(kendall_matrix[i, j], 2),
-                ha="center",
-                va="center",
-                color="black",
-            )
-
-    cax = ax[2].matshow(spearmanr_matrix, cmap="coolwarm", vmin=-1, vmax=1)
-    ax[2].set_title("Spearman")
-    for i in range(3):
-        for j in range(i, 3):
-            ax[2].text(
-                j,
-                i,
-                round(spearmanr_matrix[i, j], 2),
-                ha="center",
-                va="center",
-                color="black",
-            )
-
-    for i in range(3):
-        ax[i].set_xticks(range(3))
-        ax[i].set_yticks(range(3))
-        ax[i].set_xticklabels([indicator.name for indicator in Indicator])
-        ax[i].set_yticklabels([indicator.name for indicator in Indicator])
-
-    f.colorbar(cax, ax=ax, orientation="horizontal")
-    plt.show()
