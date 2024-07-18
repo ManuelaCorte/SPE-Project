@@ -4,63 +4,10 @@ from typing import Literal
 import numpy as np
 from tqdm import tqdm
 
-from src.data import create_countries_data
+from src.data import create_countries_data, divide_training_test_covid_data
 from src.models import baum_welch, construct_starting_markov_chain
 from src.structs import Country, HiddenState, Indicator, KnownVariables, MarkovChain
 from src.utils import Float, Matrix
-
-
-def divide_training_test_covid_data(
-    countries: list[Country],
-    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
-    dates: dict[Country, Matrix[Literal["N"], np.str_]],
-):
-    TESTING_YEAR = "2018"
-    COVID_YEAR = "2020"
-    print(
-        f"Data is divided between training, testing (after {TESTING_YEAR}) and flawed due to covid (after {COVID_YEAR})"
-    )
-
-    training_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
-    test_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
-    covid_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
-
-    print()
-    for country in countries:
-        if country not in countries_data:
-            continue
-        country_data = countries_data[country]
-
-        training_data[country] = {}
-        test_data[country] = {}
-        covid_data[country] = {}
-
-        this_date = dates[country]
-        test_date_index = -1
-        covid_date_index = -1
-        for i in range(len(this_date)):
-            if test_date_index < 0 and TESTING_YEAR in this_date[i]:
-                test_date_index = i
-            if covid_date_index < 0 and COVID_YEAR in this_date[i]:
-                covid_date_index = i
-
-        for indicator in country_data:
-            data = country_data[indicator]
-            training_data[country][indicator] = data[:test_date_index:]
-            test_data[country][indicator] = data[test_date_index:covid_date_index:]
-            covid_data[country][indicator] = data[covid_date_index::]
-
-        training_points = len(training_data[country][Indicator.GDP])
-        testing_points = len(test_data[country][Indicator.GDP])
-        covid_points = len(covid_data[country][Indicator.GDP])
-
-        country_name = "{:<13}".format(country.name)
-        print(
-            f"Country {country_name} starts from {this_date[0]} and ends at {this_date[-1]} ({training_points} training, {testing_points} test, {covid_points} covid)"
-        )
-    print()
-
-    return training_data, test_data, covid_data
 
 
 def create_countries_data_divided(
@@ -75,7 +22,7 @@ def create_countries_data_divided(
     return countries, training_data, test_data, covid_data
 
 
-def count_data_istances(
+def count_data_instances(
     data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]], name: str
 ):
     positive_testing_data = 0
@@ -218,14 +165,14 @@ if __name__ == "__main__":
     print("\n--------------------------------------------------\n")
 
     print("See training data")
-    count_data_istances(training_data, "training")
+    count_data_instances(training_data, "training")
     print()
     print("Use test data")
     last_state: HiddenState = HiddenState.get_state(
         training_data[starting_country][Indicator.IR][-1],
         training_data[starting_country][Indicator.CPI][-1],
     )
-    count_data_istances(test_data, "testing")
+    count_data_instances(test_data, "testing")
     test_markov_chain(
         starting_country,
         test_data,
@@ -239,7 +186,7 @@ if __name__ == "__main__":
         test_data[starting_country][Indicator.IR][-1],
         test_data[starting_country][Indicator.CPI][-1],
     )
-    count_data_istances(covid_data, "covid")
+    count_data_instances(covid_data, "covid")
     test_markov_chain(
         starting_country,
         covid_data,

@@ -2,57 +2,9 @@ from typing import Any, Literal
 
 import numpy as np
 from scipy.stats import kendalltau, spearmanr
-from statsmodels.regression.linear_model import OLS, RegressionResultsWrapper
 
-from src.statistics import residuals_autocorrelation
 from src.structs import Indicator
 from src.utils import Float, Matrix
-
-
-def _prais_winsten(
-    model: RegressionResultsWrapper, rho: float
-) -> RegressionResultsWrapper:
-    x = model.model.exog
-    y = model.model.endog
-
-    # prais winsten transformation for first element
-    x_0: Matrix[Literal["1"], Float] = np.sqrt(1 - rho**2) * x[0]
-    y_0: Matrix[Literal["1"], Float] = np.sqrt(1 - rho**2) * y[0]
-
-    # cochran orcutt transformation for the rest of the elements
-    x_t: Matrix[Literal["N - 1"], Float] = x[1:,] - rho * x[:-1,]
-    x_t: Matrix[Literal["N "], Float] = np.append([x_0], x_t, axis=0)
-    y_t: Matrix[Literal["N - 1"], Float] = y[1:] - rho * y[:-1]
-    y_t: Matrix[Literal["N"], Float] = np.append(y_0, y_t)
-
-    model_ar1 = OLS(y_t, x_t).fit()
-    return model_ar1
-
-
-def prais_winsten_estimation(
-    x: Matrix[Literal["N M"], Float],
-    y: Matrix[Literal["N"], Float],
-    tolerance: float = 1e-3,
-) -> RegressionResultsWrapper:
-    model = OLS(y, x).fit()
-    e_0: Matrix[Literal["N - 1"], Float] = model.resid[1:]
-    e_1: Matrix[Literal["N - 1"], Float] = model.resid[:-1]
-    rho = np.dot(e_1, e_0) / np.dot(e_1, e_1)
-    rho = rho.item()
-    model1 = _prais_winsten(model, rho)
-
-    dw = residuals_autocorrelation(model1.resid, 1)[2].statistic
-    tolerance = 1e-3
-    while dw < 2 - tolerance or dw > 2 + tolerance:
-        model1 = _prais_winsten(model1, rho)
-        e_0 = model1.resid[1:]
-        e_1 = model1.resid[:-1]
-        rho = np.dot(e_1, e_0) / np.dot(e_1, e_1)
-        rho = rho.item()
-        dw = residuals_autocorrelation(model1.resid, 1)[2].statistic
-        print("Rho = ", rho)
-
-    return model1
 
 
 def bootstrap_correlation(

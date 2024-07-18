@@ -239,3 +239,68 @@ def create_countries_data(
         except Exception as e:
             print(f"Error while processing {country.name}: {e}")
     return countries, countries_data, dates
+
+
+def divide_training_test_covid_data(
+    countries: list[Country],
+    countries_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]],
+    dates: dict[Country, Matrix[Literal["N"], np.str_]],
+):
+    """Divide the data between training, testing and flawed due to covid. The training data
+    is the data up to the end of 2016, the testing data is the data after that year and the covid
+    data is the data after 2020.
+
+    Parameters:
+        countries: The countries to be considered
+        countries_data: The data for the countries
+        dates: The dates for the countries
+
+    Returns:
+        The training, testing and covid data
+    """
+    TESTING_YEAR = "2017"
+    COVID_YEAR = "2020"
+    print(
+        f"Data is divided between training, testing (after {TESTING_YEAR}) and flawed due to covid (after {COVID_YEAR})"
+    )
+
+    training_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
+    test_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
+    covid_data: dict[Country, dict[Indicator, Matrix[Literal["N"], Float]]] = {}
+
+    print()
+    for country in countries:
+        if country not in countries_data:
+            continue
+        country_data = countries_data[country]
+
+        training_data[country] = {}
+        test_data[country] = {}
+        covid_data[country] = {}
+
+        this_date = dates[country]
+        test_date_index = -1
+        covid_date_index = -1
+        for i in range(len(this_date)):
+            if test_date_index < 0 and TESTING_YEAR in this_date[i]:
+                test_date_index = i
+            if covid_date_index < 0 and COVID_YEAR in this_date[i]:
+                covid_date_index = i
+
+        for indicator in country_data:
+            data = country_data[indicator]
+            training_data[country][indicator] = data[:test_date_index:]
+            test_data[country][indicator] = data[test_date_index:covid_date_index:]
+            covid_data[country][indicator] = data[covid_date_index::]
+
+        training_points = len(training_data[country][Indicator.GDP])
+        testing_points = len(test_data[country][Indicator.GDP])
+        covid_points = len(covid_data[country][Indicator.GDP])
+
+        country_name = "{:<13}".format(country.name)
+        print(
+            f"Country {country_name} starts from {this_date[0]} and ends at {this_date[-1]} ({training_points} training, {testing_points} test, {covid_points} covid)"
+        )
+    print()
+
+    return training_data, test_data, covid_data
