@@ -67,7 +67,7 @@ def clean_dataset(save_intermediate: bool = False, force: bool = False) -> DataF
                 intermediate_file_path + f"/{country.name.lower()}.csv", index=False
             )
 
-    df = pd.concat(countries, ignore_index=True)
+    df = pd.concat(countries)
 
     df.sort_values(by=["Country Name", "Indicator Name", "Year", "Month"], inplace=True)
     # Reorder columns
@@ -285,7 +285,7 @@ def _get_monthly_data(
     # Repeat indicator name and country code for each month
     indicator_month["Indicator Name"] = indicator.value
     indicator_month["Country Code"] = country.value
-    indicator_month["Country Name"] = country.name.capitalize()
+    indicator_month["Country Name"] = indicator_quarter["Country Name"].values[0]
 
     return indicator_month
 
