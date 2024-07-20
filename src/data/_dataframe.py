@@ -147,7 +147,7 @@ def serialize_country_data(
         ]
         length = len(indicators_series[indicator])
         if length == 0:
-            raise Exception(f"{country} does not have data for {indicator}")
+            raise Exception(f"{country.value} does not have data for {indicator.name}")
 
     # * make sure that all series start from the same date
     first_common_year = max(
