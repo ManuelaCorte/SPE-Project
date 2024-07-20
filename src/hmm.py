@@ -131,6 +131,8 @@ if __name__ == "__main__":
         starting_country, multiple_series
     )
 
+    print(f"Number of countries used: {len(training_data.keys())}")
+
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(
         training_data[starting_country]
     )
