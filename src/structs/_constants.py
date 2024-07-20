@@ -64,7 +64,6 @@ class Indicator(StrEnum):
 
     GDP = "Gross Domestic Product, Real, Seasonally Adjusted, Domestic Currency"
     IR = "Financial, Interest Rates, Lending Rate, Percent per annum"
-    # CPI = "Prices, Consumer Price Index, All items, Index"
     CPI = "Headline Consumer Price Index"
 
     @staticmethod
