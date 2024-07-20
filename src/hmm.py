@@ -133,6 +133,15 @@ if __name__ == "__main__":
 
     print(f"Number of countries used: {len(training_data.keys())}")
 
+    if (
+        len(test_data[starting_country][Indicator.GDP]) == 0
+        or len(covid_data[starting_country][Indicator.GDP]) == 0
+    ):
+        print(
+            f"ERROR: Country {starting_country.name} does not have enough data to test the Baum-Welch algorithm. Use another starting country."
+        )
+        exit(1)
+
     hidden_markov_chain, known_var_markov_chain = construct_starting_markov_chain(
         training_data[starting_country]
     )

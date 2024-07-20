@@ -289,9 +289,20 @@ def divide_training_test_covid_data(
 
         for indicator in country_data:
             data = country_data[indicator]
-            training_data[country][indicator] = data[:test_date_index:]
-            test_data[country][indicator] = data[test_date_index:covid_date_index:]
-            covid_data[country][indicator] = data[covid_date_index::]
+            if test_date_index < 0:
+                training_data[country][indicator] = data
+                test_data[country][indicator] = np.array([])
+                covid_data[country][indicator] = np.array([])
+            else:
+                training_data[country][indicator] = data[:test_date_index:]
+                if covid_date_index < 0:
+                    test_data[country][indicator] = data[test_date_index::]
+                    covid_data[country][indicator] = np.array([])
+                else:
+                    test_data[country][indicator] = data[
+                        test_date_index:covid_date_index:
+                    ]
+                    covid_data[country][indicator] = data[covid_date_index::]
 
         training_points = len(training_data[country][Indicator.GDP])
         testing_points = len(test_data[country][Indicator.GDP])
