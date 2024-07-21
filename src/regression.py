@@ -6,8 +6,8 @@ import numpy as np
 
 from src.data import create_countries_data, divide_training_test_covid_data
 from src.models import PraisWinstenRegression
-from src.structs import Country
-from src.structs._constants import Indicator
+from src.statistics import differencing
+from src.structs import Country, Indicator
 from src.utils import Float, Matrix
 
 DEFAULT_COUNTRY = Country.ITALY
@@ -31,9 +31,9 @@ def prepare_data(
         x_test = np.column_stack((np.ones(x_test.shape[0]), x_test))
         x_covid = np.column_stack((np.ones(x_covid.shape[0]), x_covid))
 
-    y_train = training[Indicator.GDP] / 10e9
-    y_test = test[Indicator.GDP] / 10e9
-    y_covid = covid[Indicator.GDP] / 10e9
+    y_train = training[Indicator.GDP]
+    y_test = test[Indicator.GDP]
+    y_covid = covid[Indicator.GDP]
     return ((x_train, y_train), (x_test, y_test), (x_covid, y_covid))
 
 
@@ -97,10 +97,30 @@ if __name__ == "__main__":
         training, test, covid, args.add_constant
     )
 
-    pw = PraisWinstenRegression(x, y, tolerance)
+    for indicator in [Indicator.GDP, Indicator.IR, Indicator.CPI]:
+        training[indicator] = differencing(training[indicator], 1)
+        test[indicator] = differencing(test[indicator], 1)
+        covid[indicator] = differencing(covid[indicator], 1)
+    (
+        (x_diff, y_diff),
+        (test_x_diff, test_y_diff),
+        (covid_x_diff, covid_y_diff),
+    ) = prepare_data(training, test, covid, args.add_constant)
+
+    pw = PraisWinstenRegression(x, y, x_diff, y_diff, tolerance)
     pw.fit()
     print(pw.summary())
-    pw.plot(f"Diagnostic Plots for {country.name.title()}")
+    pw.diagnostic_plots(f"Diagnostic Plots for {country.name.title()}")
     years = dates[country]
-    pw.predict(years, test_x, test_y, covid_x, covid_y)
+    pw.predict(
+        years,
+        test_x,
+        test_x_diff,
+        test_y,
+        test_y_diff,
+        covid_x,
+        covid_x_diff,
+        covid_y,
+        covid_y_diff,
+    )
     plt.show()

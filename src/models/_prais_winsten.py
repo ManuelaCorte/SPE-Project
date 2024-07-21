@@ -67,6 +67,7 @@ class LinearRegDiagnostic:
         y_true: Matrix[Literal["N"], Float],
         y_test: Matrix[Literal["N"], Float],
         y_covid: Matrix[Literal["N"], Float],
+        title: Optional[str] = None,
     ) -> None:
         _, ax = plt.subplots(figsize=(10, 15))
         len_test = len(y_true) - len(y_test) - len(y_covid)
@@ -79,21 +80,23 @@ class LinearRegDiagnostic:
             x=x_train,
             y=y_true,
             label="True",
-            linewidth=2,
+            linewidth=1,
             ax=ax,
         )
         ax.vlines(x_test[0], min(y_true), max(y_true), colors="r", linestyles="dashed")
-        sbn.lineplot(x=x_test, y=y_test, label="Predicted", linewidth=2, ax=ax)
+        sbn.lineplot(x=x_test, y=y_test, label="Predicted (Test)", ax=ax)
         ax.vlines(x_covid[0], min(y_true), max(y_true), colors="g", linestyles="dashed")
         sbn.lineplot(
             x=x_covid, y=y_covid, label="Predicted (COVID)", linewidth=2, ax=ax
         )
-        ax.set_title("Predictions", fontweight="bold")
+        if title is not None:
+            ax.set_title(title, fontweight="bold")
+        else:
+            ax.set_title("Predictions", fontweight="bold")
         ax.set_xlabel("Year")
         ax.set_ylabel("Value")
         # insert 1 tick per year
         ax.set_xticks(range(0, len(years), 12))
-        # show only the year
         ax.set_xticklabels(
             [years[i][:4] for i in range(0, len(years), 12)], rotation=45
         )
@@ -315,10 +318,25 @@ class PraisWinstenRegression:
         self,
         x: Matrix[Literal["N M"], Float],
         y: Matrix[Literal["N"], Float],
-        tolerance: float = 1e-3,
+        x_diff: Optional[Matrix[Literal["N M"], Float]],
+        y_diff: Optional[Matrix[Literal["N"], Float]],
+        tolerance: float = 0.05,
     ):
+        """
+        Prais-Winsten regression model for correcting autocorrelation in residuals as a first-order autoregressive process.
+
+        Args:
+            x (Matrix[Literal["N M"], Float]): The independent variables
+            y (Matrix[Literal["N"], Float]): The dependent variable
+            x_diff (Matrix[Literal["N M"], Float]): The independent variables for the first difference (x_t - x_t-1)
+            y_diff (Matrix[Literal["N"], Float]): The dependent variable for the first difference (y_t - y_t-1)
+            tolerance (float, optional): the tolerance level (p-value) for the Ljung-Box test used for convergence. Defaults to 0.05.
+        """
+
         self.x = x
         self.y = y
+        self.x_diff = x_diff
+        self.y_diff = y_diff
         self.tolerance = tolerance
 
         self._model: Optional[RegressionResultsWrapper] = None
@@ -341,22 +359,22 @@ class PraisWinstenRegression:
         """Fit a regression model using the Prais-Winsten estimation method. This method
         is used to correct for autocorrelation in the residuals of the model by estimating
         it as a first-order autoregressive process.
-
-        Parameters:
-            tolerance: The tolerance level used for the Durbin-Watson statistic. The model
-            will be refitted until the statistic is within the range [2 - tolerance, 2 + tolerance].
         """
-        uncorrected_model = OLS(self.y, self.x).fit()
+        if self.x_diff is not None and self.y_diff is not None:
+            uncorrected_model = OLS(self.y_diff, self.x_diff).fit()
+        else:
+            uncorrected_model = OLS(self.y, self.x).fit()
+
         rho = self._compute_rho(uncorrected_model)
         model = self._prais_winsten(uncorrected_model, rho)
 
-        dw = residuals_autocorrelation(model.resid, 1)[2].statistic
-        while dw < 2 - self.tolerance or dw > 2 + self.tolerance:
+        lb = residuals_autocorrelation(model.resid, 1)[0].pvalue
+        while self.tolerance > lb:
             model = self._prais_winsten(model, rho)
             rho = self._compute_rho(model)
-            dw = residuals_autocorrelation(model.resid, 1)[
+            lb = residuals_autocorrelation(model.resid, 1)[
                 2
-            ].statistic  # durbin-watson statistic
+            ].statistic  # ljung-box test
             print("Rho = ", rho)
 
         self._model = model
@@ -366,45 +384,131 @@ class PraisWinstenRegression:
         self,
         years: Matrix[Literal["N"], np.str_],
         x_test: Matrix[Literal["N M"], Float],
+        x_test_diff: Matrix[Literal["N M"], Float],
         y_test: Matrix[Literal["N"], Float],
+        y_test_diff: Matrix[Literal["N"], Float],
         x_covid: Matrix[Literal["N M"], Float],
+        x_covid_diff: Matrix[Literal["N M"], Float],
         y_covid: Matrix[Literal["N"], Float],
+        y_covid_diff: Matrix[Literal["N"], Float],
     ) -> None:
-        predicted_test = np.stack(
+        """Predict the values for the test and COVID data using the fitted model removing the first differences.
+
+        Args:
+            years (Matrix[Literal["N"], np.str_]): The years for the data
+            x_test (Matrix[Literal["N M"], Float]): The independent variables for the test data
+            y_test (Matrix[Literal["N"], Float]): The dependent variable for the test data
+            x_covid (Matrix[Literal["N M"], Float]): The independent variables for the COVID data
+            y_covid (Matrix[Literal["N"], Float]): The dependent variable for the COVID data
+        """
+        if self.x_diff is None or self.y_diff is None:
+            raise ValueError("Model has not been fitted with first differences.")
+
+        # predicted_test_diff = [0] * len(y_test_diff)
+        # ci_diff: list[Matrix[Literal["2"], Float]] = []
+        # for i, x in enumerate(x_test_diff):
+        #     if i == 0:
+        #         y_0, ci = self.predict_single_sample(x, None, None)
+        #         predicted_test_diff[0] = y_0
+        #         ci_diff.append(ci)
+        #     else:
+        #         y_t, ci = self.predict_single_sample(
+        #             x, x_test_diff[i - 1], y_test_diff[i - 1]
+        #         )
+        #         predicted_test_diff[i] = y_t
+        #         ci_diff.append(ci)
+        # predicted_test_diff = np.array(predicted_test_diff)
+        # ci_diff = np.stack(ci_diff)
+
+        # predicted_covid_diff = [0] * len(y_covid_diff)
+        # ci_diff_covid: list[Matrix[Literal["2"], Float]] = []
+        # for i, x in enumerate(x_covid_diff):
+        #     if i == 0:
+        #         y_0, ci = self.predict_single_sample(x, None, None)
+        #         predicted_covid_diff[0] = y_0
+        #         ci_diff_covid.append(ci)
+        #     else:
+        #         y_t, ci = self.predict_single_sample(
+        #             x, x_covid_diff[i - 1], y_covid_diff[i - 1]
+        #         )
+        #         predicted_covid_diff[i] = y_t
+        #         ci_diff_covid.append(ci)
+        # predicted_covid_diff = np.array(predicted_covid_diff)
+        # ci_diff_covid = np.stack(ci_diff_covid)
+
+        # predictions on differences
+        predicted_test_diff = np.stack(
             [
-                self.predict_single(x, x_test[i - 1], y_test[i - 1])
-                for i, x in enumerate(x_test)
+                self.predict_single_sample(x, x_test_diff[i - 1], y_test_diff[i - 1])
+                for i, x in enumerate(x_test_diff)
                 if i > 0
             ]
         )
-        predicted_test = np.append(
-            self.predict_single(x_test[0], None, None), predicted_test
+        predicted_test_diff = np.append(
+            self.predict_single_sample(x_test_diff[0], None, None), predicted_test_diff
         )
-
-        predicted_covid = np.stack(
+        predicted_covid_diff = np.stack(
             [
-                self.predict_single(x, x_covid[i - 1], y_covid[i - 1])
-                for i, x in enumerate(x_covid)
+                self.predict_single_sample(x, x_covid_diff[i - 1], y_covid_diff[i - 1])
+                for i, x in enumerate(x_covid_diff)
                 if i > 0
             ]
         )
-        predicted_covid = np.append(
-            self.predict_single(x_covid[0], None, None), predicted_covid
+        predicted_covid_diff = np.append(
+            self.predict_single_sample(x_covid[0], None, None), predicted_covid_diff
         )
 
-        true_x = np.concatenate([self.x, x_test, x_covid])
+        # one step ahead predictions
+        predicted_test_one_ahead = np.stack(
+            [y_test[i - 1] + predicted_test_diff[i] for i in range(1, len(y_test_diff))]
+        )
+        np.append(self.y_diff[-1] + predicted_test_diff[0], predicted_test_one_ahead)
+        predicted_covid_one_ahead = np.stack(
+            [
+                y_covid[i - 1] + predicted_covid_diff[i]
+                for i in range(1, len(y_covid_diff))
+            ]
+        )
+        np.append(self.y_diff[-1] + predicted_covid_diff[0], predicted_covid_one_ahead)
+
+        # predict based on previous predictions instead of true values
+        predicted_test: list[float] = [0] * len(y_test_diff)
+        predicted_test[0] = y_test[0] + predicted_test_diff[0]
+        for i in range(1, len(y_test_diff)):
+            predicted_test[i] = predicted_test[i - 1] + predicted_test_diff[i]
+
+        predicted_covid: list[float] = [0] * len(y_covid_diff)
+        predicted_covid[0] = y_covid[0] + predicted_covid_diff[0]
+        for i in range(1, len(y_covid_diff)):
+            predicted_covid[i] = predicted_covid[i - 1] + predicted_covid_diff[i]
+
         true_y = np.concatenate([self.y, y_test, y_covid])
-
-        predicted_y = np.concatenate([self.y, predicted_test, predicted_covid])
-
+        true_y_diff = np.concatenate([self.y_diff, y_test_diff, y_covid_diff])
         if self.diagnostic is None:
             self.diagnostic = LinearRegDiagnostic(self.model)
-        print("true_x: ", true_x.shape)
-        print("true_y: ", true_y.shape)
-        print("predicted_y: ", predicted_y.shape)
-        self.diagnostic.plot_predictions(years, true_y, predicted_test, predicted_covid)
+        self.diagnostic.plot_predictions(
+            years,
+            true_y_diff,
+            predicted_test_diff,
+            predicted_covid_diff,
+            "Predictions on first order differences",
+        )
+        self.diagnostic.plot_predictions(
+            years,
+            true_y,
+            predicted_test_one_ahead,
+            predicted_covid_one_ahead,
+            "One step ahead predictions",
+        )
+        self.diagnostic.plot_predictions(
+            years,
+            true_y,
+            np.array(predicted_test),
+            np.array(predicted_covid),
+            "Predictions based on previous predictions",
+        )
 
-    def predict_single(
+    def predict_single_sample(
         self,
         x_t: Matrix[Literal["3 1"], Float],
         x_t1: Optional[Matrix[Literal["3 1"], Float]],
@@ -419,12 +523,15 @@ class PraisWinstenRegression:
             )
         else:
             y_t = alpha + beta @ x_t[1:,]
+
+        # compute confidence interval
+        # conf_int = self.model.get_prediction(x_t).conf_int()
         return y_t
 
     def summary(self) -> str:
         return self.model.summary()
 
-    def plot(self, title: str = "Diagnostic Plots") -> None:
+    def diagnostic_plots(self, title: str = "Diagnostic Plots") -> None:
         if self.diagnostic is None:
             self.diagnostic = LinearRegDiagnostic(self.model)
 
