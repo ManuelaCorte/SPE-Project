@@ -69,7 +69,7 @@ class LinearRegDiagnostic:
         y_covid: Matrix[Literal["N"], Float],
         title: Optional[str] = None,
     ) -> None:
-        _, ax = plt.subplots(figsize=(10, 15))
+        _, ax = plt.subplots(figsize=(15, 20))
         len_test = len(y_true) - len(y_test) - len(y_covid)
         x_train = np.arange(len(y_true))
         x_test = np.arange(len_test, len_test + len(y_test))
@@ -445,7 +445,8 @@ class PraisWinstenRegression:
             ]
         )
         predicted_test_diff = np.append(
-            self.predict_single_sample(x_test_diff[0], None, None), predicted_test_diff
+            self.predict_single_sample(x_test_diff[0], None, None),
+            predicted_test_diff,
         )
         predicted_covid_diff = np.stack(
             [
@@ -455,7 +456,8 @@ class PraisWinstenRegression:
             ]
         )
         predicted_covid_diff = np.append(
-            self.predict_single_sample(x_covid[0], None, None), predicted_covid_diff
+            self.predict_single_sample(x_covid_diff[0], None, None),
+            predicted_covid_diff,
         )
 
         # one step ahead predictions
@@ -522,7 +524,7 @@ class PraisWinstenRegression:
                 + self.rho * y_t1
             )
         else:
-            y_t = alpha + beta @ x_t[1:,]
+            y_t = alpha + beta @ x_t[1:,] + self.model.resid[0]
 
         # compute confidence interval
         # conf_int = self.model.get_prediction(x_t).conf_int()
