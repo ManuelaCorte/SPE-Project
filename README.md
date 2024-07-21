@@ -27,15 +27,8 @@ To run any file, you can either use the `poetry run` command or activate the vir
 
 ### Data generation
 
-The raw datasets can be retrieved by running the following command
+The raw datasets can be retrieved at [this link](https://drive.google.com/drive/folders/1ClauAPLzxeDO2zt1UJ6nhdN8vMoptdKP?usp=sharing) and then saved in the `data/raw` directory. Using this method, if _git_ asks you to commit the changes, you can ignore them using this command
 
-```
-git lfs pull
-```
-
-and wiil be saved in the `data/raw` directory.
-
-If you don't have Git LFS installed, you can download the raw datasets from [this link](https://drive.google.com/drive/folders/1ClauAPLzxeDO2zt1UJ6nhdN8vMoptdKP?usp=sharing) and save them in the `data/raw` directory. Using this method, if _git_ asks you to commit the changes, you can ignore them using this command
 ```
 git update-index --assume-unchanged data/cleaned/* data/raw/*
 ```
@@ -55,14 +48,36 @@ The final dataset will be saved in the `data/processed` directory, while the spe
 To run the Baum-Welch algorithm for the HMM model, run the following command:
 
 ```
-poetry run python -m src.hmm --countries <list of countries separates by a space>
+poetry run python -m src.hmm [--epochs EPOCHS] [--country COUNTRY] [--multiple-series] [--help]
 ```
 
-The list of available countries can be obtained by running the following command:
+where `EPOCHS` is the number of iterations for the Baum-Welch algorithm, `COUNTRY` is the country for which the model will be trained, and `--multiple-series` is a flag that indicates whether to train the model on all available countries.
+
+The list of available countries as well as additional information can be obtained by running the following command:
 
 ```
 poetry run python -m src.hmm --help
 ```
+
+### Correlation Estimation
+
+The Pearson, Kendall and Spearman correlation coefficients can be estimated with bootstrapping by running the following command:
+
+```
+poetry run python -m src.correlation [--repetitions REPETITIONS] [--alpha ALPHA] [--country COUNTRY] [--all] [--help]
+```
+
+where `REPETITIONS` is the number of bootstrap repetitions, `ALPHA` is the significance level for the confidence interval, `COUNTRY` is the country for which the correlation coefficients will be estimated, and `--all` is a flag that indicates whether to estimate the correlation coefficients for all available countries.
+
+### Regression
+
+The regression model is implemented as a linear regression model where the residuals are modeled as a first-order autoregressive process following the Prais-Winsten method. To run the regression model, run the following command:
+
+```
+poetry run python -m src.regression [--country COUNTRY] [--tolerance TOLERANCE] [--add_constant] [--help]
+```
+
+where `COUNTRY` is the country for which the regression model will be trained, `TOLERANCE` is the tolerance level / p-value for the Ljung-Box test to check for autocorrelation in the residuals, and `--add_constant` is a flag that indicates whether to add a constant term to the regression model.
 
 ## Contributing
 

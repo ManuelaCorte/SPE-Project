@@ -43,19 +43,13 @@ if __name__ == "__main__":
         "--country",
         "-c",
         default=DEFAULT_COUNTRY.name,
-        help="The country to compute the correlation for.",
+        help="The country to compute the regression for.",
     )
     arg_parser.add_argument(
         "--tolerance",
         "-r",
         default=1e-3,
-        help="Tolerance level foe the Durbin-Watson test.",
-    )
-    arg_parser.add_argument(
-        "--alpha",
-        "-a",
-        default=0.05,
-        help="Significance level used for computing the bootstrapped confidence interval.",
+        help="Tolerance level (pvalue) for the Ljung-Box test used to determine convergence.",
     )
     arg_parser.add_argument(
         "--add_constant",
@@ -73,7 +67,7 @@ if __name__ == "__main__":
 
     if not 0 < float(args.tolerance) < 1:
         raise ValueError(
-            f"Alpha must be a float between 0 and 1. Instead got: {args.alpha}"
+            f"Tolerance must be a float between 0 and 1. Instead got: {args.alpha}"
         )
     tolerance = float(args.tolerance)
 
@@ -92,6 +86,12 @@ if __name__ == "__main__":
     training = data[0][country]
     test = data[1][country]
     covid = data[2][country]
+
+    if len(test[Indicator.GDP]) == 0 or len(covid[Indicator.GDP]) == 0:
+        print(
+            f"ERROR: Country {country.name} does not have enough data to perform the regression."
+        )
+        exit(1)
 
     (x, y), (test_x, test_y), (covid_x, covid_y) = prepare_data(
         training, test, covid, args.add_constant

@@ -176,3 +176,7 @@ results/
 *.jpg
 .DS_Store
 data/cleaned/dataset.csv
+
+# notebooks
+notebooks/
+*.ipynb
