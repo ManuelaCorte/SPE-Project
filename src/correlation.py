@@ -19,81 +19,95 @@ def plot_multiple_correlations(
     kendall: tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
     spearmanr: tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
     country: Optional[Country] = None,
+    plot_ci: bool = True,
 ) -> None:
-    lower = _plot_correlation(
-        pearson[1][:, :, 0], kendall[1][:, :, 0], spearmanr[1][:, :, 0]
-    )
-    lower.suptitle(
-        "Lower bound of the confidence interval for the correlation", fontsize=16
-    )
-
-    mean = _plot_correlation(pearson[0], kendall[0], spearmanr[0])
-    mean.suptitle("Mean of the correlation", fontsize=16)
-
-    upper = _plot_correlation(
-        pearson[1][:, :, 1], kendall[1][:, :, 1], spearmanr[1][:, :, 1]
-    )
-    upper.suptitle(
-        "Upper bound of the confidence interval for the correlation", fontsize=16
-    )
-
-    print("Saving plots to data/results/")
-    if country:
-        lower.savefig(f"data/results/{country.name}_lower.png")
-        mean.savefig(f"data/results/{country.name}_mean.png")
-        upper.savefig(f"data/results/{country.name}_upper.png")
+    if plot_ci:
+        print("Plotting correlation with confidence interval")
+        mean = _plot_correlation(pearson, kendall, spearmanr, plot_ci)
+        mean.suptitle("Mean of the correlation with confidence interval", fontsize=16)
+        print("Saving plots to data/results/")
+        if country:
+            mean.savefig(f"data/results/{country.name}_mean_ci.png")
+        else:
+            mean.savefig("data/results/all_countries_mean_ci.png")
     else:
-        lower.savefig("data/results/all_countries_lower.png")
-        mean.savefig("data/results/all_countries_mean.png")
-        upper.savefig("data/results/all_countries_upper.png")
+        lower = _plot_correlation(
+            (pearson[1][:, :, 0], pearson[1]),
+            (kendall[1][:, :, 0], kendall[1]),
+            (spearmanr[1][:, :, 0], spearmanr[1]),
+            plot_ci,
+        )
+        lower.suptitle(
+            "Lower bound of the confidence interval for the correlation", fontsize=16
+        )
+
+        mean = _plot_correlation(pearson, kendall, spearmanr, plot_ci)
+        mean.suptitle("Mean of the correlation", fontsize=16)
+        upper = _plot_correlation(
+            (pearson[1][:, :, 1], pearson[1]),
+            (kendall[1][:, :, 1], kendall[1]),
+            (spearmanr[1][:, :, 1], spearmanr[1]),
+            plot_ci,
+        )
+        upper.suptitle(
+            "Upper bound of the confidence interval for the correlation", fontsize=16
+        )
+
+        print("Saving plots to data/results/")
+        if country:
+            lower.savefig(f"data/results/{country.name}_lower.png")
+            mean.savefig(f"data/results/{country.name}_mean.png")
+            upper.savefig(f"data/results/{country.name}_upper.png")
+        else:
+            lower.savefig("data/results/all_countries_lower.png")
+            mean.savefig("data/results/all_countries_mean.png")
+            upper.savefig("data/results/all_countries_upper.png")
     plt.plot()
 
 
 def _plot_correlation(
-    pearson_matrix: Matrix[Literal["N N"], Float],
-    kendall_matrix: Matrix[Literal["N N"], Float],
-    spearmanr_matrix: Matrix[Literal["N N"], Float],
+    pearson: tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
+    kendall: tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
+    spearmanr: tuple[Matrix[Literal["N N"], Float], Matrix[Literal["N N 2"], Float]],
+    plot_ci: bool = True,
 ) -> Figure:
+    pearson_matrix = pearson[0]
+    pearson_ci = pearson[1]
     n = pearson_matrix.shape[0]
     f, ax = plt.subplots(1, n, figsize=(15, 7))
     cax = ax[0].matshow(pearson_matrix, cmap="coolwarm", vmin=-1, vmax=1)
     ax[0].set_title("Pearson")
     for i in range(n):
         for j in range(i, n):
-            ax[0].text(
-                j,
-                i,
-                round(pearson_matrix[i, j], 4),
-                ha="center",
-                va="center",
-                color="black",
-            )
+            if plot_ci:
+                text = f"{round(pearson_matrix[i, j], 4)}\n \u00B1 {round(pearson_matrix[i, j] - pearson_ci[i,j,0], 4)}"
+            else:
+                text = f"{round(pearson_matrix[i, j], 4)}"
+            ax[0].text(j, i, text, ha="center", va="center", color="black")
 
+    kendall_matrix = kendall[0]
+    kendall_ci = kendall[1]
     cax = ax[1].matshow(kendall_matrix, cmap="coolwarm", vmin=-1, vmax=1)
     ax[1].set_title("Kendall")
     for i in range(n):
         for j in range(i, n):
-            ax[1].text(
-                j,
-                i,
-                round(kendall_matrix[i, j], 4),
-                ha="center",
-                va="center",
-                color="black",
-            )
+            if plot_ci:
+                text = f"{round(kendall_matrix[i, j], 4)}\n \u00B1 {round(kendall_matrix[i, j] - kendall_ci[i,j,0], 4)}"
+            else:
+                text = f"{round(kendall_matrix[i, j], 4)}"
+            ax[1].text(j, i, text, ha="center", va="center", color="black")
 
+    spearmanr_matrix = spearmanr[0]
+    spearmanr_ci = spearmanr[1]
     cax = ax[2].matshow(spearmanr_matrix, cmap="coolwarm", vmin=-1, vmax=1)
     ax[2].set_title("Spearman")
     for i in range(n):
         for j in range(i, n):
-            ax[2].text(
-                j,
-                i,
-                round(spearmanr_matrix[i, j], 4),
-                ha="center",
-                va="center",
-                color="black",
-            )
+            if plot_ci:
+                text = f"{round(spearmanr_matrix[i, j], 4)}\n \u00B1 {round(spearmanr_matrix[i, j] - spearmanr_ci[i,j,0], 4)}"
+            else:
+                text = f"{round(spearmanr_matrix[i, j], 4)}"
+            ax[2].text(j, i, text, ha="center", va="center", color="black")
 
     for i in range(n):
         ax[i].set_xticks(range(n))
@@ -130,6 +144,12 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="Compute overall correlation for all countries.",
+    )
+    arg_parser.add_argument(
+        "--plot_ci",
+        action="store_true",
+        default=False,
+        help="If set, the correlation matrix plot will contain the mean and confidence interval. Otherwise three separate plots will be created for the mean and the lower and upper bound of the confidence interval.",
     )
     arg_parser.add_argument(
         "--help",
@@ -195,5 +215,9 @@ if __name__ == "__main__":
     pprint(kendall[0])
 
     plot_multiple_correlations(
-        pearson, kendall, spearmanr, country=None if args.all else country
+        pearson,
+        kendall,
+        spearmanr,
+        country=None if args.all else country,
+        plot_ci=args.plot_ci,
     )
