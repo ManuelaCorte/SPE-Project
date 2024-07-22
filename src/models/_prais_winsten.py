@@ -7,6 +7,7 @@ import seaborn as sns
 import seaborn as sbn
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
+from scipy import stats
 from statsmodels.graphics.gofplots import ProbPlot
 from statsmodels.regression.linear_model import OLS, RegressionResultsWrapper
 from statsmodels.stats.outliers_influence import variance_inflation_factor
@@ -67,15 +68,17 @@ class LinearRegDiagnostic:
         y_true: Matrix[Literal["N"], Float],
         y_test: Matrix[Literal["N"], Float],
         y_covid: Matrix[Literal["N"], Float],
+        ci_test: Optional[Matrix[Literal["N 2"], Float]] = None,
+        ci_covid: Optional[Matrix[Literal["N 2"], Float]] = None,
         title: Optional[str] = None,
     ) -> None:
+        sbn.set_theme(style="darkgrid")
         _, ax = plt.subplots(figsize=(15, 20))
         len_test = len(y_true) - len(y_test) - len(y_covid)
         x_train = np.arange(len(y_true))
         x_test = np.arange(len_test, len_test + len(y_test))
         x_covid = np.arange(len(y_true) - len(y_covid), len(y_true))
 
-        sbn.set_theme(style="darkgrid")
         sbn.lineplot(
             x=x_train,
             y=y_true,
@@ -84,17 +87,32 @@ class LinearRegDiagnostic:
             ax=ax,
         )
         ax.vlines(x_test[0], min(y_true), max(y_true), colors="r", linestyles="dashed")
-        sbn.lineplot(x=x_test, y=y_test, label="Predicted (Test)", ax=ax)
-        ax.vlines(x_covid[0], min(y_true), max(y_true), colors="g", linestyles="dashed")
         sbn.lineplot(
-            x=x_covid, y=y_covid, label="Predicted (COVID)", linewidth=2, ax=ax
+            x=x_test, y=y_test, label="Predicted (Test)", ax=ax, color="r", linewidth=2
         )
+        if ci_test is not None:
+            sbn.lineplot(x=x_test, y=ci_test[:, 0], ax=ax, color="r", linestyle="-")
+            sbn.lineplot(x=x_test, y=ci_test[:, 1], ax=ax, color="r", linestyle="-")
+        ax.vlines(x_covid[0], min(y_true), max(y_true), colors="g", linestyles="dashed")
+
+        sbn.lineplot(
+            x=x_covid,
+            y=y_covid,
+            label="Predicted (COVID)",
+            linewidth=2,
+            ax=ax,
+            color="g",
+        )
+        if ci_covid is not None:
+            sbn.lineplot(x=x_covid, y=ci_covid[:, 0], ax=ax, color="g", linestyle="-")
+            sbn.lineplot(x=x_covid, y=ci_covid[:, 1], ax=ax, color="g", linestyle="-")
+
         if title is not None:
             ax.set_title(title, fontweight="bold")
         else:
             ax.set_title("Predictions", fontweight="bold")
         ax.set_xlabel("Year")
-        ax.set_ylabel("Value")
+        ax.set_ylabel("GDP (hundreds of millions)")
         # insert 1 tick per year
         ax.set_xticks(range(0, len(years), 12))
         ax.set_xticklabels(
@@ -369,12 +387,10 @@ class PraisWinstenRegression:
         model = self._prais_winsten(uncorrected_model, rho)
 
         lb = residuals_autocorrelation(model.resid, 1)[0].pvalue
-        while self.tolerance > lb:
+        while self.tolerance < lb:
             model = self._prais_winsten(model, rho)
             rho = self._compute_rho(model)
-            lb = residuals_autocorrelation(model.resid, 1)[
-                2
-            ].statistic  # ljung-box test
+            lb = residuals_autocorrelation(model.resid, 1)[0].pvalue  # ljung-box test
             print("Rho = ", rho)
 
         self._model = model
@@ -383,11 +399,9 @@ class PraisWinstenRegression:
     def predict(
         self,
         years: Matrix[Literal["N"], np.str_],
-        x_test: Matrix[Literal["N M"], Float],
         x_test_diff: Matrix[Literal["N M"], Float],
         y_test: Matrix[Literal["N"], Float],
         y_test_diff: Matrix[Literal["N"], Float],
-        x_covid: Matrix[Literal["N M"], Float],
         x_covid_diff: Matrix[Literal["N M"], Float],
         y_covid: Matrix[Literal["N"], Float],
         y_covid_diff: Matrix[Literal["N"], Float],
@@ -396,103 +410,83 @@ class PraisWinstenRegression:
 
         Args:
             years (Matrix[Literal["N"], np.str_]): The years for the data
-            x_test (Matrix[Literal["N M"], Float]): The independent variables for the test data
-            y_test (Matrix[Literal["N"], Float]): The dependent variable for the test data
-            x_covid (Matrix[Literal["N M"], Float]): The independent variables for the COVID data
-            y_covid (Matrix[Literal["N"], Float]): The dependent variable for the COVID data
+            x_test_diff (Matrix[Literal["N M"], Float]): The independent variables for the test data first differences
+            y_test (Matrix[Literal["N"], Float]): The true values for the test data
+            y_test_diff (Matrix[Literal["N"], Float]): The true values for the test data first differences
+            x_covid_diff (Matrix[Literal["N M"], Float]): The independent variables for the COVID data first differences
+            y_covid (Matrix[Literal["N"], Float]): The true values for the COVID data
+            y_covid_diff (Matrix[Literal["N"], Float]): The true values for the COVID data first differences
         """
         if self.x_diff is None or self.y_diff is None:
             raise ValueError("Model has not been fitted with first differences.")
 
-        # predicted_test_diff = [0] * len(y_test_diff)
-        # ci_diff: list[Matrix[Literal["2"], Float]] = []
-        # for i, x in enumerate(x_test_diff):
-        #     if i == 0:
-        #         y_0, ci = self.predict_single_sample(x, None, None)
-        #         predicted_test_diff[0] = y_0
-        #         ci_diff.append(ci)
-        #     else:
-        #         y_t, ci = self.predict_single_sample(
-        #             x, x_test_diff[i - 1], y_test_diff[i - 1]
-        #         )
-        #         predicted_test_diff[i] = y_t
-        #         ci_diff.append(ci)
-        # predicted_test_diff = np.array(predicted_test_diff)
-        # ci_diff = np.stack(ci_diff)
-
-        # predicted_covid_diff = [0] * len(y_covid_diff)
-        # ci_diff_covid: list[Matrix[Literal["2"], Float]] = []
-        # for i, x in enumerate(x_covid_diff):
-        #     if i == 0:
-        #         y_0, ci = self.predict_single_sample(x, None, None)
-        #         predicted_covid_diff[0] = y_0
-        #         ci_diff_covid.append(ci)
-        #     else:
-        #         y_t, ci = self.predict_single_sample(
-        #             x, x_covid_diff[i - 1], y_covid_diff[i - 1]
-        #         )
-        #         predicted_covid_diff[i] = y_t
-        #         ci_diff_covid.append(ci)
-        # predicted_covid_diff = np.array(predicted_covid_diff)
-        # ci_diff_covid = np.stack(ci_diff_covid)
-
         # predictions on differences
-        predicted_test_diff = np.stack(
-            [
-                self.predict_single_sample(x, x_test_diff[i - 1], y_test_diff[i - 1])
-                for i, x in enumerate(x_test_diff)
-                if i > 0
-            ]
-        )
-        predicted_test_diff = np.append(
-            self.predict_single_sample(x_test_diff[0], None, None),
-            predicted_test_diff,
-        )
-        predicted_covid_diff = np.stack(
-            [
-                self.predict_single_sample(x, x_covid_diff[i - 1], y_covid_diff[i - 1])
-                for i, x in enumerate(x_covid_diff)
-                if i > 0
-            ]
-        )
-        predicted_covid_diff = np.append(
-            self.predict_single_sample(x_covid_diff[0], None, None),
-            predicted_covid_diff,
-        )
+        predictions: list[Matrix[Literal["1"], Float]] = []
+        test_ci: list[Matrix[Literal["2"], Float]] = []
+        for i in range(len(x_test_diff)):
+            prediction, ci = self.predict_single_sample(x_test_diff[i])
+            predictions.append(prediction)
+            test_ci.append(ci)
+        predicted_test_diff = np.array(predictions)
+        test_pi = np.array(test_ci)
+
+        predictions: list[Matrix[Literal["1"], Float]] = []
+        covid_ci: list[Matrix[Literal["2"], Float]] = []
+        for i in range(len(x_covid_diff)):
+            prediction, ci = self.predict_single_sample(x_covid_diff[i])
+            predictions.append(prediction)
+            covid_ci.append(ci)
+        predicted_covid_diff = np.array(predictions)
+        covid_pi = np.array(covid_ci)
 
         # one step ahead predictions
         predicted_test_one_ahead = np.stack(
             [y_test[i - 1] + predicted_test_diff[i] for i in range(1, len(y_test_diff))]
         )
-        np.append(self.y_diff[-1] + predicted_test_diff[0], predicted_test_one_ahead)
+        predicted_test_one_ahead = np.append(
+            self.y[-1] + predicted_test_diff[0], predicted_test_one_ahead
+        )
         predicted_covid_one_ahead = np.stack(
             [
                 y_covid[i - 1] + predicted_covid_diff[i]
                 for i in range(1, len(y_covid_diff))
             ]
         )
-        np.append(self.y_diff[-1] + predicted_covid_diff[0], predicted_covid_one_ahead)
+        predicted_covid_one_ahead = np.append(
+            y_test[-1] + predicted_covid_diff[0], predicted_covid_one_ahead
+        )
 
         # predict based on previous predictions instead of true values
         predicted_test: list[float] = [0] * len(y_test_diff)
         predicted_test[0] = y_test[0] + predicted_test_diff[0]
         for i in range(1, len(y_test_diff)):
             predicted_test[i] = predicted_test[i - 1] + predicted_test_diff[i]
+        predicted_test_y = np.array(predicted_test)
+        test_pi_shifted: Matrix[Literal["N 2"], Float] = np.zeros_like(test_pi)
+        test_pi_shifted[:, 0] = test_pi[:, 0] + predicted_test_y
+        test_pi_shifted[:, 1] = test_pi[:, 1] + predicted_test_y
 
         predicted_covid: list[float] = [0] * len(y_covid_diff)
         predicted_covid[0] = y_covid[0] + predicted_covid_diff[0]
         for i in range(1, len(y_covid_diff)):
             predicted_covid[i] = predicted_covid[i - 1] + predicted_covid_diff[i]
+        predicted_covid_y = np.array(predicted_covid)
+        covid_pi_shifted: Matrix[Literal["N 2"], Float] = np.zeros_like(covid_pi)
+        covid_pi_shifted[:, 0] = covid_pi[:, 0] + predicted_covid_y
+        covid_pi_shifted[:, 1] = covid_pi[:, 1] + predicted_covid_y
 
         true_y = np.concatenate([self.y, y_test, y_covid])
         true_y_diff = np.concatenate([self.y_diff, y_test_diff, y_covid_diff])
         if self.diagnostic is None:
             self.diagnostic = LinearRegDiagnostic(self.model)
+
         self.diagnostic.plot_predictions(
             years,
             true_y_diff,
             predicted_test_diff,
             predicted_covid_diff,
+            test_pi,
+            covid_pi,
             "Predictions on first order differences",
         )
         self.diagnostic.plot_predictions(
@@ -500,35 +494,48 @@ class PraisWinstenRegression:
             true_y,
             predicted_test_one_ahead,
             predicted_covid_one_ahead,
+            None,
+            None,
             "One step ahead predictions",
         )
         self.diagnostic.plot_predictions(
             years,
             true_y,
-            np.array(predicted_test),
-            np.array(predicted_covid),
+            predicted_test_y,
+            predicted_covid_y,
+            test_pi_shifted,
+            covid_pi_shifted,
             "Predictions based on previous predictions",
         )
 
     def predict_single_sample(
         self,
         x_t: Matrix[Literal["3 1"], Float],
-        x_t1: Optional[Matrix[Literal["3 1"], Float]],
-        y_t1: Optional[Matrix[Literal["3 1"], Float]],
-    ) -> Matrix[Literal["3 1"], Float]:
-        alpha, beta = self.model.params[0], self.model.params[1:]
-        if x_t1 is not None and y_t1 is not None:
-            y_t = (
-                alpha * (1 - self.rho)
-                + beta @ (x_t[1:,] - self.rho * x_t1[1:,])
-                + self.rho * y_t1
-            )
-        else:
-            y_t = alpha + beta @ x_t[1:,] + self.model.resid[0]
+    ) -> tuple[Matrix[Literal["3 1"], Float], Matrix[Literal["2"], Float]]:
+        alpha_star, beta_star = self.model.params[0], self.model.params[1:]
+        alpha = alpha_star / (1 - self.rho)
+        beta = beta_star
+        params = np.append(alpha, beta)
+        y_t = params @ x_t
+        pi = self.compute_prediction_interval(x_t, y_t)
+        return y_t, pi
 
-        # compute confidence interval
-        # conf_int = self.model.get_prediction(x_t).conf_int()
-        return y_t
+    def compute_prediction_interval(
+        self,
+        x_test: Matrix[Literal["3 M"], Float],
+        y_test: Matrix[Literal["1"], Float],
+    ) -> Matrix[Literal["2"], Float]:
+        """Compute prediction intervals as described in
+        https://www.researchgate.net/publication/374108428_Harmonic_Regression_Analysis_of_Time-Series_Measurements
+        """
+        x = self.model.model.exog
+        n = len(x)
+        num = np.sum(x - x_test) ** 2
+        det = n * np.sum(x_test - np.mean(x, axis=0))
+        sigma = np.sqrt(np.sum(self.model.resid**2) / (n - 2))
+        chi = num / det + 1 / (1 - self.rho**2)
+        pi = stats.t.ppf(0.975, n - 2) * sigma * np.sqrt(chi)
+        return np.array([y_test - pi, y_test + pi])
 
     def summary(self) -> str:
         return self.model.summary()

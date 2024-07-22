@@ -31,9 +31,9 @@ def prepare_data(
         x_test = np.column_stack((np.ones(x_test.shape[0]), x_test))
         x_covid = np.column_stack((np.ones(x_covid.shape[0]), x_covid))
 
-    y_train = training[Indicator.GDP]
-    y_test = test[Indicator.GDP]
-    y_covid = covid[Indicator.GDP]
+    y_train = training[Indicator.GDP] / 1e11
+    y_test = test[Indicator.GDP] / 1e11
+    y_covid = covid[Indicator.GDP] / 1e11
     return ((x_train, y_train), (x_test, y_test), (x_covid, y_covid))
 
 
@@ -114,11 +114,9 @@ if __name__ == "__main__":
     years = dates[country]
     pw.predict(
         years,
-        test_x,
         test_x_diff,
         test_y,
         test_y_diff,
-        covid_x,
         covid_x_diff,
         covid_y,
         covid_y_diff,

@@ -191,7 +191,7 @@ def residuals_autocorrelation(
         "Ljung-Box",
         "Any of a group of autocorrelations of a time series is different from zero",
         test["lb_stat"],  # type: ignore
-        test["lb_pvalue"].values[1] if test["lb_pvalue"].values.size > 1 else 0,  # type: ignore
+        test["lb_pvalue"].values[1] if test["lb_pvalue"].values.size > 1 else test["lb_pvalue"].values[0],  # type: ignore
     )
 
     pierce = SignificanceResult(
