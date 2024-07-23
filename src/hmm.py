@@ -54,20 +54,41 @@ def test_markov_chain(
 ):
     epochs = 1000
     total_testing_data = len(test_data[starting_country][Indicator.GDP])
-    hidden_states = np.zeros((len(HiddenState)))
-    known_states = np.zeros((len(KnownVariables)))
+    hidden_states_runs = np.zeros((epochs, len(HiddenState)))
+    known_var_runs = np.zeros((epochs, len(KnownVariables)))
     curr_state = last_state.value
-    for _ in tqdm(range(epochs), desc="testing", unit="epoch"):
+    for epoch in tqdm(range(epochs), desc="testing", unit="epoch"):
+        hidden_states = np.zeros((len(HiddenState)))
+        known_var = np.zeros((len(KnownVariables)))
         for _ in range(total_testing_data):
             curr_state = hidden_markov_chain.random_walk(curr_state)
             known_var_state = known_var_markov_chain.random_walk(curr_state)
             hidden_states[curr_state] += 1
-            known_states[known_var_state] += 1
+            known_var[known_var_state] += 1
+        hidden_states_runs[epoch] = hidden_states
+        known_var_runs[epoch] = known_var
+
+    hidden_states_avg = np.mean(hidden_states_runs, axis=0)
+    known_var_avg = np.mean(known_var_runs, axis=0)
+    hidden_states_std = np.std(hidden_states_runs, axis=0)
+    known_var_std = np.std(known_var_runs, axis=0)
+    hidden_state_ci = 1.96 * hidden_states_std / np.sqrt(epochs)
+    known_var_ci = 1.96 * known_var_std / np.sqrt(epochs)
+
+    hidden_state_estimate = []
+    known_var_estimate = []
+    for mean, ci in zip(hidden_states_avg, hidden_state_ci):
+        s = f"{mean:.2f} ± {ci:.2f}"
+        hidden_state_estimate.append(s)
+    for mean, ci in zip(known_var_avg, known_var_ci):
+        s = f"{mean:.2f} ± {ci:.2f}"
+        known_var_estimate.append(s)
+
     print(
-        f"{starting_country.name} random walks has produced on average {hidden_states / epochs} for the hidden states and {known_states / epochs} for the known states"
+        f"{starting_country.name} random walks has produced on average {hidden_state_estimate} for the hidden states and {known_var_estimate} for the known states"
     )
     print(
-        f"On average we have predicted {known_states[0] / epochs} positive and {known_states[1] / epochs} negative values for GDP"
+        f"On average we have predicted {known_var_estimate[0]} positive and {known_var_estimate[1]} negative values for GDP"
     )
 
 
