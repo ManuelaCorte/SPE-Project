@@ -2,6 +2,7 @@ import argparse
 from typing import Literal
 
 import numpy as np
+from scipy import stats
 from tqdm import tqdm
 
 from src.data import create_countries_data, divide_training_test_covid_data
@@ -72,8 +73,14 @@ def test_markov_chain(
     known_var_avg = np.mean(known_var_runs, axis=0)
     hidden_states_std = np.std(hidden_states_runs, axis=0)
     known_var_std = np.std(known_var_runs, axis=0)
-    hidden_state_ci = 1.96 * hidden_states_std / np.sqrt(epochs)
-    known_var_ci = 1.96 * known_var_std / np.sqrt(epochs)
+    hidden_state_ci = (
+        stats.t.ppf(1 - 0.05 / 2, epochs - 1)
+        * hidden_states_std
+        * np.sqrt(1 + 1 / epochs)
+    )
+    known_var_ci = (
+        stats.t.ppf(1 - 0.05 / 2, epochs - 1) * known_var_std * np.sqrt(1 + 1 / epochs)
+    )
 
     hidden_state_estimate = []
     known_var_estimate = []

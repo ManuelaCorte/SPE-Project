@@ -184,13 +184,11 @@ if __name__ == "__main__":
         )
         print("Computing correlation for all countries")
         for data in countries_data.values():
-            for indicator, matrix in data.items():
+            for indicator, values in data.items():
                 if indicator not in features:
-                    features[indicator] = matrix
+                    features[indicator] = values
                 else:
-                    features[indicator] = np.concatenate(
-                        (features[indicator], matrix), axis=0
-                    )
+                    features[indicator] = np.hstack((features[indicator], values))
         pearson, spearmanr, kendall = bootstrap_correlation(
             features, repetitions, alpha
         )
@@ -199,6 +197,9 @@ if __name__ == "__main__":
             country, all_countries=False, pct=False
         )
         print(f"Computing correlation for {country.name}")
+        if country not in countries_data:
+            print("No data found for the selected country.")
+            exit(1)
         features = countries_data[country]
         pearson, spearmanr, kendall = bootstrap_correlation(
             features, repetitions, alpha

@@ -6,6 +6,7 @@ import pandas as pd
 import seaborn as sns
 import seaborn as sbn
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from scipy import stats
 from statsmodels.graphics.gofplots import ProbPlot
@@ -41,7 +42,7 @@ class LinearRegDiagnostic:
         self.nparams = len(self.results.params)
         self.nresids = len(self.residual_norm)
 
-    def plot(self, title: str) -> None:
+    def plot(self, title: str) -> Figure:
         """
         Generates diagnostic plots for the fitted model. The plots are:
         1. Residual vs Fitted
@@ -59,8 +60,8 @@ class LinearRegDiagnostic:
         ax[1, 1] = self.leverage_plot(ax=ax[1, 1])
 
         fig.suptitle(title)
-        plt.tight_layout()
-        plt.show()
+        fig.tight_layout()
+        return fig
 
     def plot_predictions(
         self,
@@ -71,9 +72,9 @@ class LinearRegDiagnostic:
         ci_test: Optional[Matrix[Literal["N 2"], Float]] = None,
         ci_covid: Optional[Matrix[Literal["N 2"], Float]] = None,
         title: Optional[str] = None,
-    ) -> None:
+    ) -> Figure:
         sbn.set_theme(style="darkgrid")
-        _, ax = plt.subplots(figsize=(15, 20))
+        f, ax = plt.subplots(figsize=(15, 20))
         len_test = len(y_true) - len(y_test) - len(y_covid)
         x_train = np.arange(len(y_true))
         x_test = np.arange(len_test, len_test + len(y_test))
@@ -118,6 +119,8 @@ class LinearRegDiagnostic:
         ax.set_xticklabels(
             [years[i][:4] for i in range(0, len(years), 12)], rotation=45
         )
+
+        return f
 
     def residual_plot(self, ax: Axes) -> Axes:
         """
@@ -405,7 +408,7 @@ class PraisWinstenRegression:
         x_covid_diff: Matrix[Literal["N M"], Float],
         y_covid: Matrix[Literal["N"], Float],
         y_covid_diff: Matrix[Literal["N"], Float],
-    ) -> None:
+    ) -> tuple[Figure, Figure, Figure]:
         """Predict the values for the test and COVID data using the fitted model removing the first differences.
 
         Args:
@@ -480,7 +483,7 @@ class PraisWinstenRegression:
         if self.diagnostic is None:
             self.diagnostic = LinearRegDiagnostic(self.model)
 
-        self.diagnostic.plot_predictions(
+        fig_differences = self.diagnostic.plot_predictions(
             years,
             true_y_diff,
             predicted_test_diff,
@@ -489,7 +492,7 @@ class PraisWinstenRegression:
             covid_pi,
             "Predictions on first order differences",
         )
-        self.diagnostic.plot_predictions(
+        fig_one_ahead = self.diagnostic.plot_predictions(
             years,
             true_y,
             predicted_test_one_ahead,
@@ -498,7 +501,8 @@ class PraisWinstenRegression:
             None,
             "One step ahead predictions",
         )
-        self.diagnostic.plot_predictions(
+
+        fig_predictions = self.diagnostic.plot_predictions(
             years,
             true_y,
             predicted_test_y,
@@ -507,6 +511,8 @@ class PraisWinstenRegression:
             covid_pi_shifted,
             "Predictions based on previous predictions",
         )
+
+        return fig_differences, fig_one_ahead, fig_predictions
 
     def predict_single_sample(
         self,
@@ -540,11 +546,11 @@ class PraisWinstenRegression:
     def summary(self) -> str:
         return self.model.summary()
 
-    def diagnostic_plots(self, title: str = "Diagnostic Plots") -> None:
+    def diagnostic_plots(self, title: str = "Diagnostic Plots") -> Figure:
         if self.diagnostic is None:
             self.diagnostic = LinearRegDiagnostic(self.model)
 
-        self.diagnostic.plot(title)
+        return self.diagnostic.plot(title)
 
     def _compute_rho(self, model: RegressionResultsWrapper) -> float:
         e_0: Matrix[Literal["N - 1"], Float] = model.resid[1:]

@@ -110,9 +110,12 @@ if __name__ == "__main__":
     pw = PraisWinstenRegression(x, y, x_diff, y_diff, tolerance)
     pw.fit()
     print(pw.summary())
-    pw.diagnostic_plots(f"Diagnostic Plots for {country.name.title()}")
+    diagnostic_figure = pw.diagnostic_plots(
+        f"Diagnostic Plots for {country.name.title()}"
+    )
+    diagnostic_figure.savefig(f"data/results/{country.name}_diagnostic_plots.png")
     years = dates[country]
-    pw.predict(
+    fig_diff, fig_one_ahead, fig_predictions = pw.predict(
         years,
         test_x_diff,
         test_y,
@@ -121,4 +124,8 @@ if __name__ == "__main__":
         covid_y,
         covid_y_diff,
     )
+    fig_diff.savefig(f"data/results/{country.name}_reg_diff.png")
+    fig_one_ahead.savefig(f"data/results/{country.name}_reg_one_ahead.png")
+    fig_predictions.savefig(f"data/results/{country.name}_reg_predictions.png")
+
     plt.show()
