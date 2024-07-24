@@ -1,0 +1,84 @@
+\documentclass[conference]{IEEEtran}
+% todo change back, for now I need to read lol
+% \documentclass{report}
+
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{algorithmic}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{listings}
+% Customizing lstlisting to mimic verbatim
+\lstset{
+  basicstyle=\ttfamily,
+  breaklines=true, % Allows line breaks
+  postbreak=\mbox{\space}, % Optional: mark line breaks
+  escapeinside={(@}{@)}, % Define escape characters
+}
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+\begin{document}
+\title{Simulation and Performance Evaluation\\ Project}
+
+
+% author names and affiliations
+% use a multiple column layout for up to three different
+% affiliations
+\author{\IEEEauthorblockN{Manuela Corte Pause}
+  \IEEEauthorblockA{manuela.cortepause@studenti.unitn.it
+    \\240183}
+  \and
+  \IEEEauthorblockN{Simone Marrocco}
+  \IEEEauthorblockA{simone.marrocco@studenti.unitn.it
+    \\239951}
+}
+
+% make the title area
+\maketitle
+
+% As a general rule, do not put math, special symbols or citations
+% in the abstract
+\begin{abstract}
+  The relationship between economic indicators is a topic on interest for economists and policy makers to improve the lives of the citizens. In this project, we explore the relationship between the Gross Domestic Product (GDP), the Inflation Rate (IR) and the Consumer Price Index (CPI). We first conduct a preliminary analysis of the correlation between the variables and then we try to explicitly model them using two different approaches: the Prais-Winsten Model and the Hidden Markov Model. We then use the models to predict the GDP for the next year and compare the results. We find that the Hidden Markov Model is able to capture the dynamics of the data better than the Prais-Winsten Model, but our simplified analysis restricted it to only predict whether the GDP will increase or decrease. The Pais-Winsten Model, on the other hand, is able to predict the GDP value for the next years, but is not as reliable.
+\end{abstract}
+
+
+% For peerreview papers, this IEEEtran command inserts a page break and
+% creates the second title. It will be ignored for other modes.
+\IEEEpeerreviewmaketitle
+
+
+\input{chapters/introduction}
+\input{chapters/works}
+\input{chapters/data}
+\input{chapters/correlation}
+\input{chapters/regression}
+\input{chapters/prediction}
+\newpage
+\input{chapters/conclusions}
+
+
+% \section*{Acknowledgment}
+% The authors would like to thank...
+
+
+
+% trigger a \newpage just before the given reference
+% number - used to balance the columns on the last page
+% adjust value as needed - may need to be readjusted if
+% the document is modified later
+%\IEEEtriggeratref{8}
+% The "triggered" command can be changed if desired:
+%\IEEEtriggercmd{\enlargethispage{-5in}}
+
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{references.bib}
+
+\end{document}
