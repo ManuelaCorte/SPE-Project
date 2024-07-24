@@ -171,9 +171,8 @@ cython_debug/
 
 # Results plots
 results/
-*.png
-*.jpeg
-*.jpg
+results/*.png
+results/*.jpeg
 .DS_Store
 data/cleaned/dataset.csv
 
