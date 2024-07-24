@@ -53,13 +53,13 @@ class LinearRegDiagnostic:
         vif = self.vif_table()
         print(vif.to_string(index=False))
 
-        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(12, 12))
         ax[0, 0] = self.residual_plot(ax=ax[0, 0])
         ax[0, 1] = self.qq_plot(ax=ax[0, 1])
         ax[1, 0] = self.scale_location_plot(ax=ax[1, 0])
         ax[1, 1] = self.leverage_plot(ax=ax[1, 1])
 
-        fig.suptitle(title)
+        fig.suptitle(title, fontweight="bold")
         fig.tight_layout()
         return fig
 
@@ -74,7 +74,7 @@ class LinearRegDiagnostic:
         title: Optional[str] = None,
     ) -> Figure:
         sbn.set_theme(style="darkgrid")
-        f, ax = plt.subplots(figsize=(15, 20))
+        f, ax = plt.subplots(figsize=(20, 15))
         len_test = len(y_true) - len(y_test) - len(y_covid)
         x_train = np.arange(len(y_true))
         x_test = np.arange(len_test, len_test + len(y_test))
@@ -109,11 +109,11 @@ class LinearRegDiagnostic:
             sbn.lineplot(x=x_covid, y=ci_covid[:, 1], ax=ax, color="g", linestyle="-")
 
         if title is not None:
-            ax.set_title(title, fontweight="bold")
+            ax.set_title(title, fontweight="bold", fontsize=16)
         else:
-            ax.set_title("Predictions", fontweight="bold")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("GDP (hundreds of millions)")
+            ax.set_title("Predictions", fontweight="bold", fontsize=16)
+        ax.set_xlabel("Year", fontsize=12)
+        ax.set_ylabel("GDP (hundreds of millions)", fontsize=12)
         # insert 1 tick per year
         ax.set_xticks(range(0, len(years), 12))
         ax.set_xticklabels(
@@ -402,9 +402,11 @@ class PraisWinstenRegression:
     def predict(
         self,
         years: Matrix[Literal["N"], np.str_],
+        x_test: Matrix[Literal["N M"], Float],
         x_test_diff: Matrix[Literal["N M"], Float],
         y_test: Matrix[Literal["N"], Float],
         y_test_diff: Matrix[Literal["N"], Float],
+        x_covid: Matrix[Literal["N M"], Float],
         x_covid_diff: Matrix[Literal["N M"], Float],
         y_covid: Matrix[Literal["N"], Float],
         y_covid_diff: Matrix[Literal["N"], Float],
@@ -509,7 +511,7 @@ class PraisWinstenRegression:
             predicted_covid_y,
             test_pi_shifted,
             covid_pi_shifted,
-            "Predictions based on previous predictions",
+            "Predictions on original data",
         )
 
         return fig_differences, fig_one_ahead, fig_predictions

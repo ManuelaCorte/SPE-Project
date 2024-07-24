@@ -61,8 +61,8 @@ def plot_time_series(
     )
     sbn.lineplot(x=x, y=moving_sd, label=f"Rolling SD ({window})", linewidth=2, ax=ax)
     ax.set_title(args.title)
-    ax.set_xlabel(args.x_axis)
-    ax.set_ylabel(args.y_axis)
+    ax.set_xlabel(args.x_axis, fontsize=12)
+    ax.set_ylabel(args.y_axis, fontsize=12)
     # insert 1 tick per year
     ax.set_xticks(range(0, len(x), 12))
     # show only the year
@@ -70,13 +70,12 @@ def plot_time_series(
     ax.legend()
 
     if args.save:
-        if not os.path.exists("data/results/plots"):
-            os.makedirs("data/results/plots")
-        plt.savefig(f"plots/{args.filename}.png")
+        if not os.path.exists("data/results"):
+            os.makedirs("data/results")
+        plt.savefig(f"data/results/{args.filename}.png")
 
 
 def acf_plot(
-    x: Matrix[Literal["N"], np.str_],
     y: Matrix[Literal["N"], Float],
     lag: int,
     args: PlotOptions,
@@ -85,17 +84,16 @@ def acf_plot(
 
     acf_figure, ax = plt.subplots(1, 1, figsize=(20, 10))
     tsa.plot_acf(y, lags=lag, title=args.title, ax=ax)
-    ax.set_xlabel(args.x_axis)
-    ax.set_ylabel(args.y_axis)
+    ax.set_xlabel(args.x_axis, fontsize=12)
+    ax.set_ylabel(args.y_axis, fontsize=12)
 
     if args.save:
-        if not os.path.exists("data/results/plots"):
-            os.makedirs("data/results/plots")
-        acf_figure.savefig(f"data/results/plots/{args.filename}.png")
+        if not os.path.exists("data/results"):
+            os.makedirs("data/results")
+        acf_figure.savefig(f"data/results/{args.filename}.png")
 
 
 def pacf_plot(
-    x: Matrix[Literal["N"], np.str_],
     y: Matrix[Literal["N"], np.float32],
     lag: int,
     args: PlotOptions,
@@ -104,13 +102,13 @@ def pacf_plot(
 
     pacf_figure, ax = plt.subplots(1, 1, figsize=(20, 10))
     tsa.plot_pacf(y, lags=lag, title=args.title, ax=ax)
-    ax.set_xlabel(args.x_axis)
-    ax.set_ylabel(args.y_axis)
+    ax.set_xlabel(args.x_axis, fontsize=12)
+    ax.set_ylabel(args.y_axis, fontsize=12)
 
     if args.save:
-        if not os.path.exists("data/results/plots"):
-            os.makedirs("data/results/plots")
-        pacf_figure.savefig(f"data/results/plots/{args.filename}.png")
+        if not os.path.exists("data/results"):
+            os.makedirs("data/results")
+        pacf_figure.savefig(f"data/results/{args.filename}.png")
 
 
 def lag_plot(
@@ -129,11 +127,11 @@ def lag_plot(
         ax[i // 5, i % 5].set_xlabel(args.x_axis)
         ax[i // 5, i % 5].set_ylabel(args.y_axis)
 
-    lag_figure.suptitle(args.title)
+    lag_figure.suptitle(args.title, fontsize=16)
     lag_figure.tight_layout()
 
     if args.save:
-        if not os.path.exists("data/results/plots"):
-            os.makedirs("data/results/plots")
+        if not os.path.exists("data/results"):
+            os.makedirs("data/results")
 
-        lag_figure.savefig(f"data/results/plots/{args.filename}.png")
+        lag_figure.savefig(f"data/results/{args.filename}.png")

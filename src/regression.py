@@ -3,12 +3,13 @@ from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+from statsmodels.regression.linear_model import OLS
 
 from src.data import create_countries_data, divide_training_test_covid_data
 from src.models import PraisWinstenRegression
 from src.statistics import differencing
 from src.structs import Country, Indicator
-from src.utils import Float, Matrix
+from src.utils import Float, Matrix, PlotOptions, acf_plot, pacf_plot, plot_time_series
 
 DEFAULT_COUNTRY = Country.ITALY
 
@@ -58,6 +59,12 @@ if __name__ == "__main__":
         help="Add a constant to the model.",
     )
     arg_parser.add_argument(
+        "--all_plots",
+        action="store_true",
+        default=False,
+        help="Generate more plots with the original time series their differenced versions and correlation plots for all of them.",
+    )
+    arg_parser.add_argument(
         "--help",
         "-h",
         action="help",
@@ -87,6 +94,91 @@ if __name__ == "__main__":
     test = data[1][country]
     covid = data[2][country]
 
+    years = dates[country]
+    if args.all_plots:
+        for indicator in Indicator:
+            y = np.concatenate([training[indicator], test[indicator], covid[indicator]])
+            plot_time_series(
+                years,
+                y,
+                13,
+                PlotOptions(
+                    filename=f"{country.name}_{indicator.name}",
+                    title=f"{country.name.title()} {indicator.name}",
+                    x_axis="Year",
+                    y_axis=indicator.name,
+                    labels=["Time Series", "Moving Average", "Standard deviation"],
+                    save=True,
+                ),
+            )
+            diff_y = differencing(y, 1)
+            plot_time_series(
+                years[1:],
+                diff_y,
+                13,
+                PlotOptions(
+                    filename=f"{country.name}_{indicator.name}_diff",
+                    title=f"{country.name.title()} {indicator.name} (Differenced)",
+                    x_axis="Year",
+                    y_axis=indicator.name,
+                    labels=[
+                        "Time Series Differenced",
+                        "Moving Average",
+                        "Standard deviation",
+                    ],
+                    save=True,
+                ),
+            )
+            acf_plot(
+                y,
+                len(years) // 2 - 1,
+                PlotOptions(
+                    filename=f"{country.name}_{indicator.name}_acf",
+                    title=f"{country.name.title()} {indicator.name} ACF",
+                    x_axis="Lag",
+                    y_axis="Autocorrelation",
+                    labels=[],
+                    save=True,
+                ),
+            )
+            acf_plot(
+                diff_y,
+                len(years) // 2 - 1,
+                PlotOptions(
+                    filename=f"{country.name}_{indicator.name}_acf_diff",
+                    title=f"{country.name.title()} {indicator.name} ACF (Differenced)",
+                    x_axis="Lag",
+                    y_axis="Autocorrelation (Differenced)",
+                    labels=[],
+                    save=True,
+                ),
+            )
+            pacf_plot(
+                y,
+                len(years) // 2 - 1,
+                PlotOptions(
+                    filename=f"{country.name}_{indicator.name}_acf",
+                    title=f"{country.name.title()} {indicator.name} PACF",
+                    x_axis="Lag",
+                    y_axis="Partial Autocorrelation",
+                    labels=[],
+                    save=True,
+                ),
+            )
+            pacf_plot(
+                diff_y,
+                len(years) // 2 - 1,
+                PlotOptions(
+                    filename=f"{country.name}_{indicator.name}_acf_diff",
+                    title=f"{country.name.title()} {indicator.name} PACF (Differenced)",
+                    x_axis="Lag",
+                    y_axis="Partial Autocorrelation (Differenced)",
+                    labels=[],
+                    save=True,
+                ),
+            )
+            plt.show()
+
     if len(test[Indicator.GDP]) == 0 or len(covid[Indicator.GDP]) == 0:
         print(
             f"ERROR: Country {country.name} does not have enough data to perform the regression."
@@ -114,12 +206,50 @@ if __name__ == "__main__":
         f"Diagnostic Plots for {country.name.title()}"
     )
     diagnostic_figure.savefig(f"data/results/{country.name}_diagnostic_plots.png")
+    plt.show()
+
+    if args.all_plots:
+        original_model = OLS(y_diff, x_diff).fit()
+        y = original_model.resid
+        x = np.arange(len(y))
+        f, ax = plt.subplots(1, 1, figsize=(20, 10))
+        ax.plot(y)
+        ax.set_title(f"Residuals for {country.name.title()}")
+        ax.set_ylabel("Residuals")
+
+        acf_plot(
+            y,
+            len(x) // 2 - 1,
+            PlotOptions(
+                filename=f"{country.name}_residuals_acf",
+                title=f"{country.name.title()} residuals ACF",
+                x_axis="Lag",
+                y_axis="Autocorrelation",
+                labels=[],
+                save=True,
+            ),
+        )
+        pacf_plot(
+            y,
+            len(x) // 2 - 1,
+            PlotOptions(
+                filename=f"{country.name}_residuals_acf",
+                title=f"{country.name.title()} residuals PACF",
+                x_axis="Lag",
+                y_axis="Partial Autocorrelation",
+                labels=[],
+                save=True,
+            ),
+        )
+        plt.show()
     years = dates[country]
     fig_diff, fig_one_ahead, fig_predictions = pw.predict(
         years,
+        test_x,
         test_x_diff,
         test_y,
         test_y_diff,
+        covid_x,
         covid_x_diff,
         covid_y,
         covid_y_diff,
